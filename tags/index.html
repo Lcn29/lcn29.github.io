@@ -176,6 +176,15 @@
 </article>
 
 
+<div id="comments-template"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script>
+	if(!window.commentConfig) {
+      window.commentConfig = {}
+      window.commentConfig.title = '标签'
+    }
+</script>
+
 
                 </div>
                 <aside class="col-md-4 gal-left" id="sidebar">
@@ -371,5 +380,27 @@
 <script src="/js/blog.js"></script>
 
 
+
+<script src="https://myau.moe/js/comment/gitment.browser.js"></script>
+<script>
+    if(window.commentConfig) {
+      window.commentConfig.id = 'Sat Jul 13 2019 19:28:18 GMT+0800'
+      window.commentConfig.owner = 'LCN29'
+      window.commentConfig.repo = 'lcn29.github.io'
+      window.commentConfig.client_id = '1b559f91c12c9a872b42'
+      window.commentConfig.client_secret = '4ea9fef7fbd8940ad00a5b4a3e3122a3887e2e22'
+      window.commentConfig.redirect_uri = ''
+    } else {
+      window.commentConfig = {
+      	id: 'Sat Jul 13 2019 19:28:18 GMT+0800',
+        owner: 'LCN29',
+        repo: 'lcn29.github.io',
+        client_id: '1b559f91c12c9a872b42',
+        client_secret: '4ea9fef7fbd8940ad00a5b4a3e3122a3887e2e22',
+        redirect_uri: ''
+      }
+    }
+</script>
+<script src="/js/comment/gitment.js"></script>
 
 </html>

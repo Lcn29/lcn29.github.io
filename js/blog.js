@@ -17,11 +17,13 @@
 	
 	// ------- 处理搜索侧边栏结束 --------
 
+    // 此处的数字决定了页面背景图的数量上限
+    var picNum = 7;
 	var slideList = []
 	var prefix = window.slideConfig.prefix
 	var ext = '.' + window.slideConfig.ext
 	var maxCount = window.slideConfig.maxCount
-	for(var k = 0; k < 6; k++) {
+	for(var k = 0; k < picNum; k++) {
 		var n = Math.floor(Math.random() * maxCount) + 1
 		while(slideList.indexOf(n) !== -1) {
 			n = Math.floor(Math.random() * maxCount) + 1

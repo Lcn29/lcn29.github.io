@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>lcn的博客</title>
+  
+  <subtitle>学无止境</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://lcn29.github.io/"/>
+  <updated>2019-08-01T12:03:16.350Z</updated>
+  <id>http://lcn29.github.io/</id>
+  
+  <author>
+    <name>lcn</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>GitHubPages介绍</title>
+    <link href="http://lcn29.github.io/2019/08/01/GitHubPages%E4%BB%8B%E7%BB%8D/"/>
+    <id>http://lcn29.github.io/2019/08/01/GitHubPages介绍/</id>
+    <published>2019-08-01T12:00:32.000Z</published>
+    <updated>2019-08-01T12:03:16.350Z</updated>
+    
+    <content type="html"><![CDATA[<!-- build time:Thu Aug 01 2019 20:10:22 GMT+0800 (GMT+08:00) --><h1 id="GitHub-Pages介绍"><a href="#GitHub-Pages介绍" class="headerlink" title="GitHub Pages介绍"></a>GitHub Pages介绍</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Websites <span class="keyword">for</span> you and your projects.</span><br><span class="line">Hosted directly from your GitHub repository. Just edit, push, and your changes are live.</span><br></pre></td></tr></table></figure><p>我的理解：</p><ul><li>一个依托于Github仓库的展示你或者你的项目的静态网站。</li><li>当你的网站做了修改，只有将其托送到对应的Github仓库,那么你的修改就能立即生效。</li></ul><h2 id="2-展示你"><a href="#2-展示你" class="headerlink" title="2. 展示你"></a>2. 展示你</h2><p>基于GitHub Pages建立一个属于你自己的网站的步骤:</p><p>(1)第一步建立一个仓库<br>在Github上建立一个仓库，这个仓库和平时你存项目的仓库没有什么区别，唯一的要求就是仓库的名字的格式： <code>{你的Github用户名}.github.io</code> 这个格式是保证后续能够访问到你的仓库内容要求</p><p>(2)在你的仓库里面新建一个index.html页面(index.html就是你的网站的入口)</p><pre><code class="html"><span class="meta">&lt;!DOCTYPE html&gt;</span><span class="tag">&lt;<span class="name">html</span>&gt;</span><span class="tag">&lt;<span class="name">head</span>&gt;</span><span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">"utf-8"</span>&gt;</span><span class="tag">&lt;<span class="name">meta</span> <span class="attr">http-equiv</span>=<span class="string">"X-UA-Compatible"</span> <span class="attr">content</span>=<span class="string">"IE=edge,chrome=1"</span>&gt;</span><span class="tag">&lt;<span class="name">title</span>&gt;</span>Examples<span class="tag">&lt;/<span class="name">title</span>&gt;</span><span class="tag">&lt;<span class="name">meta</span> <span class="attr">name</span>=<span class="string">"description"</span> <span class="attr">content</span>=<span class="string">""</span>&gt;</span><span class="tag">&lt;<span class="name">meta</span> <span class="attr">name</span>=<span class="string">"keywords"</span> <span class="attr">content</span>=<span class="string">""</span>&gt;</span><span class="tag">&lt;/<span class="name">head</span>&gt;</span><span class="tag">&lt;<span class="name">body</span>&gt;</span>  <span class="tag">&lt;<span class="name">h1</span>&gt;</span>Hello GitHub Pages !<span class="tag">&lt;/<span class="name">h1</span>&gt;</span><span class="tag">&lt;/<span class="name">body</span>&gt;</span><span class="tag">&lt;/<span class="name">html</span>&gt;</span></code></pre><p>通过上面2步上面，一个展示你的网站就完成了。这是你通过浏览器访问<code>https://{你的Github用户名}.github.io</code>你将看到你index里面的内容了: Hello GitHub Pages。</p><p>后续你只要修改index.html页面或者添加新的页面，在提交到你的仓库，那么对应的页面就会修改。所以你完全可以通过GitPage做一个你想要的网站</p><p>[注] 如果你拥有一个组织，也想建立一个展示你组织的网站,方式和上面类似，只是<code>{你的Github用户名}</code>修改为<code>{你的组织的名}</code></p><h2 id="3-展示你项目"><a href="#3-展示你项目" class="headerlink" title="3. 展示你项目"></a>3. 展示你项目</h2><p>假设你把你的一个项目托管到了github,并将其开源了。那么为了让别人能开心的使用你的开源项目，当前需要有对应的说明文档吧。这是你会?</p><blockquote><ol><li>直接写在readme</li><li>开一个wiki</li></ol></blockquote><p>这2种方式都可以。 现在你可以多一种方式了：为你的项目建一个GitHub Pages,通过网页的形式进行介绍</p><ul><li>第一步在你的开源项目下新建一个分支 (分支名：gh-pages)</li><li>在你的分支里面放入你想要展示的页面(如果你的项目的master里面原本是有内容的，切的分支里面也会有对应的内容,因为这条分支后续是不会合并内容到主干的，所以可考虑把这些内容删除,方便后续的管理)</li></ul><p>这时你就可以通过 <code>https://{你的用户名}.github.io/{你的项目仓库名(大小写要一致)}</code>访问到你的项目了GitHub Pages了</p><!-- rebuild by neat -->]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;!-- build time:Thu Aug 01 2019 20:10:22 GMT+0800 (GMT+08:00) --&gt;&lt;h1 id=&quot;GitHub-Pages介绍&quot;&gt;&lt;a href=&quot;#GitHub-Pages介绍&quot; class=&quot;headerlink&quot; title=
+      
+    
+    </summary>
+    
+      <category term="Git" scheme="http://lcn29.github.io/categories/Git/"/>
+    
+      <category term="GitHub" scheme="http://lcn29.github.io/categories/Git/GitHub/"/>
+    
+    
+      <category term="GitHub" scheme="http://lcn29.github.io/tags/GitHub/"/>
+    
+  </entry>
+  
+</feed>

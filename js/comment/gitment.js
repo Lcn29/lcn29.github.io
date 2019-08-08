@@ -393,7 +393,6 @@ if ($('.article-excerpt').length >= 1) {
 			creator: owner
 		}
 	}).done(function(issues) {
-		console.log(issues)
 		$excerpts.each(function () {
 			const that = $(this)
 			that.find('h1 > a > span').each(function () {

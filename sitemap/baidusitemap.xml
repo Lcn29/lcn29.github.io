@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://lcn29.github.io/2019/08/11/Java%E5%AE%B9%E5%99%A8(%E9%9B%86%E5%90%88)%E7%B1%BB/</loc>
+    <lastmod>2019-08-23</lastmod>
+  </url>  <url>
+    <loc>http://lcn29.github.io/2019/08/20/HashSet/</loc>
+    <lastmod>2019-08-20</lastmod>
+  </url>  <url>
+    <loc>http://lcn29.github.io/2019/08/20/HashMap/</loc>
+    <lastmod>2019-08-20</lastmod>
+  </url>  <url>
     <loc>http://lcn29.github.io/2019/08/17/ArrayDeque/</loc>
     <lastmod>2019-08-17</lastmod>
   </url>  <url>
@@ -8,9 +17,6 @@
     <lastmod>2019-08-17</lastmod>
   </url>  <url>
     <loc>http://lcn29.github.io/2019/08/13/ArrayList/</loc>
-    <lastmod>2019-08-17</lastmod>
-  </url>  <url>
-    <loc>http://lcn29.github.io/2019/08/11/Java%E5%AE%B9%E5%99%A8(%E9%9B%86%E5%90%88)%E7%B1%BB/</loc>
     <lastmod>2019-08-17</lastmod>
   </url>  <url>
     <loc>http://lcn29.github.io/2019/08/12/Collection-toArray%E7%9A%84%E7%90%86%E8%A7%A3/</loc>

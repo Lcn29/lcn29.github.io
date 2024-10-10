@@ -1,0 +1,1180 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="Java Thread 介绍, Lcn29">
+    <meta name="description" content="线程是操作系统调度的最小单元, 也叫轻量级进程。它被包含在进程之中, 是进程中的实际运作单位。同一进程可以创建多个线程, 每个线程都有自己独立的一块内存空间, 并且能够访问共享的内存变量。
+1 线程的分类在 Java 中, 线程可以分为 2">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+    <title>Java Thread 介绍 | Lcn29</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+
+
+    <!-- bg-cover style     -->
+
+
+
+<link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+<link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+<link rel="stylesheet" type="text/css" href="/css/matery.css">
+<link rel="stylesheet" type="text/css" href="/css/my.css">
+<link rel="stylesheet" type="text/css" href="/css/dark.css" media="none" onload="if(media!='all')media='all'">
+
+
+
+
+    <link rel="stylesheet" href="/libs/tocbot/tocbot.css">
+    <link rel="stylesheet" href="/css/post.css">
+
+
+
+
+    
+
+
+
+    <script src="/libs/jquery/jquery-3.6.0.min.js"></script>
+
+<meta name="generator" content="Hexo 6.3.0"><link rel="alternate" href="/atom.xml" title="Lcn29" type="application/atom+xml">
+</head>
+
+
+<body>
+    <header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.svg" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">Lcn29</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fas fa-bars"></i></a>
+<ul class="right nav-menu">
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/" class="waves-effect waves-light">
+      
+      <i class="fas fa-home" style="zoom: 0.6;"></i>
+      
+      <span>首页</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/tags" class="waves-effect waves-light">
+      
+      <i class="fas fa-tags" style="zoom: 0.6;"></i>
+      
+      <span>标签</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/archives" class="waves-effect waves-light">
+      
+      <i class="fas fa-archive" style="zoom: 0.6;"></i>
+      
+      <span>归档</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/about" class="waves-effect waves-light">
+      
+      <i class="fas fa-user-circle" style="zoom: 0.6;"></i>
+      
+      <span>关于</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/friends" class="waves-effect waves-light">
+      
+      <i class="fas fa-address-book" style="zoom: 0.6;"></i>
+      
+      <span>友链</span>
+    </a>
+    
+  </li>
+  
+  <li>
+    <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+      <i id="searchIcon" class="fas fa-search" title="搜索" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+  <li>
+    <a href="javascript:;" class="waves-effect waves-light" onclick="switchNightMode()" title="深色/浅色模式" >
+      <i id="sum-moon-icon" class="fas fa-sun" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+</ul>
+
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.svg" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">Lcn29</div>
+        <div class="logo-desc">
+            
+            Technical System
+            
+        </div>
+    </div>
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li class="m-nav-item">
+	  
+		<a href="/" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-home"></i>
+			
+			首页
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/tags" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-tags"></i>
+			
+			标签
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/archives" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-archive"></i>
+			
+			归档
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/about" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-user-circle"></i>
+			
+			关于
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/friends" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-address-book"></i>
+			
+			友链
+		</a>
+          
+        </li>
+        
+        
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="https://github.com/lcn29" class="waves-effect waves-light" target="_blank">
+                <i class="fab fa-github-square fa-fw"></i>Fork Me
+            </a>
+        </li>
+        
+    </ul>
+</div>
+
+
+        </div>
+
+        
+            <style>
+    .nav-transparent .github-corner {
+        display: none !important;
+    }
+
+    .github-corner {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        right: 0;
+        border: 0;
+        transform: scale(1.1);
+    }
+
+    .github-corner svg {
+        color: #121317;
+        fill: #fff;
+        height: 64px;
+        width: 64px;
+    }
+
+    .github-corner:hover .octo-arm {
+        animation: a 0.56s ease-in-out;
+    }
+
+    .github-corner .octo-arm {
+        animation: none;
+    }
+
+    @keyframes a {
+        0%,
+        to {
+            transform: rotate(0);
+        }
+        20%,
+        60% {
+            transform: rotate(-25deg);
+        }
+        40%,
+        80% {
+            transform: rotate(10deg);
+        }
+    }
+</style>
+
+<a href="https://github.com/lcn29" class="github-corner tooltipped hide-on-med-and-down" target="_blank"
+   data-tooltip="Fork Me" data-position="left" data-delay="50">
+    <svg viewBox="0 0 250 250" aria-hidden="true">
+        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+        <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
+              fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+        <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
+              fill="currentColor" class="octo-body"></path>
+    </svg>
+</a>
+        
+    </nav>
+
+</header>
+
+    
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/18.jpg')">
+    <div class="container" style="right: 0px;left: 0px;">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <h1 class="description center-align post-title">Java Thread 介绍</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<main class="post-container content">
+
+    
+    <div class="row">
+    <div id="main-content" class="col s12 m12 l9">
+        <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/Java/">
+                                <span class="chip bg-color">Java</span>
+                            </a>
+                        
+                            <a href="/tags/Java-%E5%B9%B6%E5%8F%91/">
+                                <span class="chip bg-color">Java 并发</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2021-08-31
+                </div>
+                
+
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-check fa-fw"></i>更新日期:&nbsp;&nbsp;
+                    2024-10-10
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
+                    3k
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                    11 分
+                </div>
+                
+
+                
+                    <div id="busuanzi_container_page_pv" class="info-break-policy">
+                        <i class="far fa-eye fa-fw"></i>阅读次数:&nbsp;&nbsp;
+                        <span id="busuanzi_value_page_pv"></span>
+                    </div>
+				
+            </div>
+        </div>
+        <hr class="clearfix">
+
+        
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.min.css">
+        
+
+        
+
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <p>线程是操作系统调度的最小单元, 也叫轻量级进程。它被包含在进程之中, 是进程中的实际运作单位。<br>同一进程可以创建多个线程, 每个线程都有自己独立的一块内存空间, 并且能够访问共享的内存变量。</p>
+<h2 id="1-线程的分类"><a href="#1-线程的分类" class="headerlink" title="1 线程的分类"></a>1 线程的分类</h2><p>在 Java 中, 线程可以分为 2 种</p>
+<blockquote>
+<ol>
+<li>守护线程: 守护线程是为用户线程服务的线程, 在后台默默地完成一些系统性的服务, 如垃圾回收等</li>
+<li>用户线程: 真正完成业务的工作线程</li>
+</ol>
+</blockquote>
+<p>在一个应用程序中, 如果用户线程全部结束了, 意味着程序需要完成的业务操作已经结束, 系统可以退出了。<br>所以当系统只剩下守护进程的时候, Java 虚拟机会自动退出。<br>反之, 如果程序中的用户进程还在执行中, Java 虚拟机会等待器执行完成才结束。  </p>
+<h2 id="2-线程的创建"><a href="#2-线程的创建" class="headerlink" title="2 线程的创建"></a>2 线程的创建</h2><h3 id="2-1-继承-Thread-类-重写-run-方法"><a href="#2-1-继承-Thread-类-重写-run-方法" class="headerlink" title="2.1 继承 Thread 类, 重写 run 方法"></a>2.1 继承 Thread 类, 重写 run 方法</h3><pre class="language-java" data-language="java"><code class="language-java"><span class="token comment">// 定义自己的线程逻辑</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyThread</span> extend <span class="token class-name">Thread</span> <span class="token punctuation">&#123;</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Thread is running "</span> <span class="token operator">+</span> <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment">// 启动线程</span>
+<span class="token keyword">new</span> <span class="token class-name">MyThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+
+<h3 id="2-2-实现-Runnable-接口"><a href="#2-2-实现-Runnable-接口" class="headerlink" title="2.2 实现 Runnable 接口"></a>2.2 实现 Runnable 接口</h3><pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">createThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 定义自己的线程逻辑</span>
+    <span class="token class-name">Thread</span> thread <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Thread</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Runnable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token annotation punctuation">@Override</span>
+        <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Thread is running "</span> <span class="token operator">+</span> <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    thread<span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<h3 id="2-3-实现-Callable-接口"><a href="#2-3-实现-Callable-接口" class="headerlink" title="2.3 实现 Callable 接口"></a>2.3 实现 Callable 接口</h3><pre class="language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@FunctionalInterface</span>
+<span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">Callable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">V</span><span class="token punctuation">></span></span> <span class="token punctuation">&#123;</span>
+    <span class="token class-name">V</span> <span class="token function">call</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Exception</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>Callable 接口和 Runnable 接口类似, call 方法里面就是需要线程执行的逻辑, 不同的是 <strong>Callable 有返回值</strong>。<br>同时还有一个隐藏的不同点, Callable 内部可以抛出异常, 同时这个异常是可以被捕获的, 所以可以通过异常再做一次容错处理。</p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">createThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 实现 Callable 实现线程</span>
+    <span class="token class-name">Callable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> callable <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Callable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token annotation punctuation">@Override</span>
+        <span class="token keyword">public</span> <span class="token class-name">String</span> <span class="token function">call</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Thread is running "</span> <span class="token operator">+</span> <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">3000L</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> <span class="token string">"finish"</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 这里借助线程池来实现线程</span>
+    <span class="token class-name">ExecutorService</span> executorService <span class="token operator">=</span> <span class="token class-name">Executors</span><span class="token punctuation">.</span><span class="token function">newSingleThreadExecutor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 提交任务到线程池, Future 是对执行结果的封装</span>
+    <span class="token class-name">Future</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> future <span class="token operator">=</span> executorService<span class="token punctuation">.</span><span class="token function">submit</span><span class="token punctuation">(</span>callable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 尝试获取执行结果</span>
+        <span class="token comment">// 注意: Future.get 方法是一个阻塞方法。如果对应的线程这时候还没有执行完成, 调用这个方法, 会阻塞当前线程</span>
+        <span class="token class-name">String</span> result <span class="token operator">=</span> future<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Thread's result:"</span> <span class="token operator">+</span> result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span><span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">finally</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 关闭线程池</span>
+        executorService<span class="token punctuation">.</span><span class="token function">shutdown</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>    
+<span class="token punctuation">&#125;</span></code></pre>
+
+
+<h3 id="2-4-创建-FutureTask-实例"><a href="#2-4-创建-FutureTask-实例" class="headerlink" title="2.4 创建 FutureTask 实例"></a>2.4 创建 FutureTask 实例</h3><p>FutureTask 的 UML 图:<br><img src="https://pic.imgdb.cn/item/65634d9dc458853aef71807d.png" alt="Alt &#39;FutureTask 的 UML 图&#39;"></p>
+<p>可以发现: FutureTask 还实现了 Runnable 接口, 所以可 FutureTask 也可以当做 Runnable 使用。<br>同时其还实现了一个 Future 的接口。</p>
+<p>Futrue 接口的定义如下</p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">Future</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">V</span><span class="token punctuation">></span></span> <span class="token punctuation">&#123;</span>
+
+    <span class="token keyword">boolean</span> <span class="token function">cancel</span><span class="token punctuation">(</span><span class="token keyword">boolean</span> mayInterruptIfRunning<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">boolean</span> <span class="token function">isCancelled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">boolean</span> <span class="token function">isDone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token class-name">V</span> <span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">InterruptedException</span><span class="token punctuation">,</span> <span class="token class-name">ExecutionException</span><span class="token punctuation">;</span>
+
+    <span class="token class-name">V</span> <span class="token function">get</span><span class="token punctuation">(</span><span class="token keyword">long</span> timeout<span class="token punctuation">,</span> <span class="token class-name">TimeUnit</span> unit<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">InterruptedException</span><span class="token punctuation">,</span> <span class="token class-name">ExecutionException</span><span class="token punctuation">,</span> <span class="token class-name">TimeoutException</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>Futrue 主要是用于子线程将自己的执行结果返回给主线程:  </p>
+<blockquote>
+<ol>
+<li>主线程将任务提供给子线程时, 会立即返回一个 Future 的返回值</li>
+<li>一开始这个对象的返回值会是空的, 后续子线程执行完成后, 会把返回值翻到这个对象内</li>
+<li>主线程就可以主动通过这个对象获取到执行结果</li>
+<li>因为主线程主动获取执行结果时, 可能子线程还未执行完成, 所以获取返回结果的方法是阻塞的, 主动获取返回结果时, 如果还未有返回值时, 主线程将会被阻塞等待到有返回结果</li>
+</ol>
+</blockquote>
+<p>通过 Future 的声明, 可以知道 Future 除了获取返回结果外, 还具备了取消任务, 获取任务是否完成等功能。</p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">createThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    
+    <span class="token class-name">Callable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> callable <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Callable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token annotation punctuation">@Override</span>
+        <span class="token keyword">public</span> <span class="token class-name">String</span> <span class="token function">call</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Thread is running "</span> <span class="token operator">+</span> <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">3000L</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> <span class="token string">"finish"</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 创建 FutureTask 实例</span>
+    <span class="token class-name">FutureTask</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> futureTask <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">FutureTask</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span><span class="token punctuation">(</span>callable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 创建线程池</span>
+    <span class="token class-name">ExecutorService</span> executorService <span class="token operator">=</span> <span class="token class-name">Executors</span><span class="token punctuation">.</span><span class="token function">newSingleThreadExecutor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// FutrueTask 执行方式一</span>
+    <span class="token comment">// 此处可以不要返回值, 通过入参的 futureTask 获取执行结果</span>
+    <span class="token class-name">Future</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token operator">?</span><span class="token punctuation">></span></span> future <span class="token operator">=</span> executorService<span class="token punctuation">.</span><span class="token function">submit</span><span class="token punctuation">(</span>futureTask<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// FutureTask 执行方式二, 当 Runnable 使用</span>
+    <span class="token comment">// new Thread(futureTask).start();</span>
+
+    <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 同样的会阻塞当前线程</span>
+        <span class="token comment">// 通过 FutureTask 创建的, 返回结果放在自身上, 不在 executorService.submit 的返回值</span>
+        <span class="token comment">// 通过 future 和 futureTask 都会阻塞当前线程</span>
+        <span class="token class-name">String</span> result <span class="token operator">=</span> futureTask<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Thread's result:"</span> <span class="token operator">+</span> result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+    <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> finish <span class="token punctuation">&#123;</span>
+        executorService<span class="token punctuation">.</span><span class="token function">shutdown</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p><strong>4 种方式的对比</strong></p>
+<blockquote>
+<ol>
+<li>Thread: 编写简单, 但是不能再继承其他父类, 其内部实际还是通过 Runnable 实现的</li>
+<li>Runnable: 多个线程可以共用一个 Runnable 对象, 适合多线程处理同一个任务的情况。没法知道线程的执行情况</li>
+<li>Callable: 具备和 Runnable 一样的优势的同时, 可以知道线程的执行情况。但是需要借助 ExecutorService, 没法指定工作线程执行</li>
+<li>FutureTask: 具备了 Runnable 和 Callable 的所有优点, 缺点就是编写复杂</li>
+</ol>
+</blockquote>
+<h2 id="3-线程的属性"><a href="#3-线程的属性" class="headerlink" title="3 线程的属性"></a>3 线程的属性</h2><h3 id="3-1-tid"><a href="#3-1-tid" class="headerlink" title="3.1 tid"></a>3.1 tid</h3><p>线程 Id, 用于标记不同的线程 (某个编号的线程结束后, 这个编号可能别后续创建的线程使用)。</p>
+<h3 id="3-2-name"><a href="#3-2-name" class="headerlink" title="3.2 name"></a>3.2 name</h3><p>线程名称, 面向人的一个属性, 用于区分不同的属性, 默认为 <code>Thread-数字</code>。 在实际开发中, 尽可能的自定义自己的线程名, 这样在后续的问题定位排查有帮助<br>(同时记得不要重复, Java 允许存在线程名相同的情况, 但是这会影响到后面问题的定义)。</p>
+<h3 id="3-3-priority"><a href="#3-3-priority" class="headerlink" title="3.3 priority"></a>3.3 priority</h3><p>用于系统的线程调度用的, 表示希望某个线程能够优先得到运行。Java 定义了 1 - 10 个级别, 值越大, 优先级越高, 默认为 5。在实际使用中, 尽可能的不要自定义优先级, 可能会出现意想不到的问题, 比如线程饥饿。</p>
+<h3 id="3-4-daemon"><a href="#3-4-daemon" class="headerlink" title="3.4 daemon"></a>3.4 daemon</h3><p>是否为守护线程。一个线程是用户线程还是守护线程, 通过这个属性进行区分。<br>true: 表示这个线程为守护线程, 否则为用户线程, 这个属性的设置需要在线程启动之前进行设置才有效, 默认为 false, 用户线程。</p>
+<h3 id="3-5-threadStatus"><a href="#3-5-threadStatus" class="headerlink" title="3.5 threadStatus"></a>3.5 threadStatus</h3><p>线程状态, 标识当前线程的处于什么样的一样状态, 具体的取值后面分析。</p>
+<p>其实 Thread 身上还有其他几个属性, 基本不是什么重要的属性, 就不展开了。</p>
+<h2 id="4-线程状态"><a href="#4-线程状态" class="headerlink" title="4 线程状态"></a>4 线程状态</h2><h3 id="4-1-状态取值"><a href="#4-1-状态取值" class="headerlink" title="4.1 状态取值"></a>4.1 状态取值</h3><table>
+<thead>
+<tr>
+<th align="center">线程状态</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">NEW</td>
+<td align="left">初始状态。线程已创建, 但是未启动, 既未调用 start 方法</td>
+</tr>
+<tr>
+<td align="center">RUNNABLE</td>
+<td align="left">运行状态。她包括 2 个状态: 准备状态 和 运行状态</td>
+</tr>
+<tr>
+<td align="center">BLOCKED</td>
+<td align="left">阻塞状态。线程阻塞于锁 或者 发起了阻塞式 I&#x2F;O 操作 (Socket 读写)</td>
+</tr>
+<tr>
+<td align="center">WAITING</td>
+<td align="left">等待状态。当前线程需要等待其他线程执行一下特定的操作(通知, 中断)</td>
+</tr>
+<tr>
+<td align="center">TIME_WAITING</td>
+<td align="left">超时等待状态。和 WAITING 类似, 区别就是这个状态的等待是有时间限制的</td>
+</tr>
+<tr>
+<td align="center">TERMINATED</td>
+<td align="left">终止状态。线程的需要执行的任务已完成。</td>
+</tr>
+</tbody></table>
+<h3 id="4-2-线程状态的转换"><a href="#4-2-线程状态的转换" class="headerlink" title="4.2 线程状态的转换"></a>4.2 线程状态的转换</h3><p>如图:<br><img src="https://pic.imgdb.cn/item/65634ea2c458853aef75cd4c.png" alt="Alt &#39;线程状态转换&#39;"></p>
+<h4 id="4-2-1-New"><a href="#4-2-1-New" class="headerlink" title="4.2.1 New"></a>4.2.1 New</h4><p>通过 new Thread() 创建出 Thread 实例, 实例的默认的状态就是 New</p>
+<h3 id="4-2-2-Runnable"><a href="#4-2-2-Runnable" class="headerlink" title="4.2.2 Runnable"></a>4.2.2 Runnable</h3><p>Java 中的 Runnalbe 状态实际可以再细分为 Ready 和 Running。线程处于 Runnable 不一定就是在执行中的, 也有可能是在 Ready 中,<br>具体什么时候从 Ready 变为 Running, 完全取决于系统的调度。</p>
+<h3 id="4-2-3-Waiting"><a href="#4-2-3-Waiting" class="headerlink" title="4.2.3 Waiting"></a>4.2.3 Waiting</h3><p>等待中状态, 处于等待状态的线程, 正在等待其他线程去执行一个特定的操作。</p>
+<p>从 Runnable 转到 Waiting 的方式有</p>
+<blockquote>
+<ol>
+<li>Object.join()</li>
+<li>Ojbect.wait()</li>
+<li>Lock.lock(), 尝试获取锁, 获取锁失败时</li>
+<li>LockSupport.park()</li>
+</ol>
+</blockquote>
+<p>从 Waiting 转到 Runnable 的方式有</p>
+<blockquote>
+<ol>
+<li>Object.notify()</li>
+<li>Ojbect.notifyAll()</li>
+<li>LockSupport.uppark(Thread)</li>
+</ol>
+</blockquote>
+<h3 id="4-2-4-Time-Waiting"><a href="#4-2-4-Time-Waiting" class="headerlink" title="4.2.4 Time_Waiting"></a>4.2.4 Time_Waiting</h3><p>带超时时间的等待状态。</p>
+<p>从 Runnable 转到 Timed_waiting 的方式有</p>
+<blockquote>
+<ol>
+<li>Thead.sleep(long)</li>
+<li>Object.wait(long)</li>
+<li>Thread.join(long)</li>
+<li>Lock.tryLock(long, TimeUnit)</li>
+<li>LockSupport.parkNanos()</li>
+<li>LockSupport.parkUntil()</li>
+</ol>
+</blockquote>
+<p>从 Timed_Waiting 转到 Runnable 的方式有</p>
+<blockquote>
+<ol>
+<li>Object.notify()</li>
+<li>Ojbect.notifyAll()</li>
+<li>LockSupport.uppark(Thread)</li>
+</ol>
+</blockquote>
+<h3 id="4-2-5-Blocked"><a href="#4-2-5-Blocked" class="headerlink" title="4.2.5 Blocked"></a>4.2.5 Blocked</h3><p>阻塞状态, 此时线程无任何的处理能力</p>
+<p>从 Runnable 转到 Blocked 的方式有</p>
+<blockquote>
+<ol>
+<li>获取 synchronized 锁失败</li>
+</ol>
+</blockquote>
+<p>从 Blocked 转到 Runnable 的方式有</p>
+<blockquote>
+<ol>
+<li>获取 synchronized 锁成功</li>
+</ol>
+</blockquote>
+<p>备注(待考证):<br>WAITING 和 BLOCKING 之间也存在着转换, 当多个线程阻塞于同一个锁时, 他们都处于 WAITING 状态, 当有一个线程释放锁了, 上面的线程会同时争取锁, 争取到锁的线程会进入到 RUNNABLE, 没有争取到的会进入到 BLOCKED。</p>
+<h3 id="4-2-6-Terminated"><a href="#4-2-6-Terminated" class="headerlink" title="4.2.6 Terminated"></a>4.2.6 Terminated</h3><p>终止状态。<br>线程中的业务业务代码执行完成, 结束逻辑。</p>
+<h2 id="5-线程的一些基本操作"><a href="#5-线程的一些基本操作" class="headerlink" title="5 线程的一些基本操作"></a>5 线程的一些基本操作</h2><h3 id="5-1-sleep"><a href="#5-1-sleep" class="headerlink" title="5.1 sleep"></a>5.1 sleep</h3><p>sleep(long mills) 是 Thread 的一个静态方法。<br>可以让当前线程进入休眠, 休眠的时间由指定的参数决定。  </p>
+<p>调用这个方法会导致线程状态变为 Timed_waiting。</p>
+<h3 id="5-2-wait"><a href="#5-2-wait" class="headerlink" title="5.2 wait"></a>5.2 wait</h3><p>wait() &#x2F; wait(long mills) 是 Object 的一个方法, 可以让执行这个方法的线程暂停 (进入到 Waiting &#x2F; Timed_waiting)。<br>wait() &#x2F; wait(long mills) 在使用之前需要先获取到锁, 才能进入暂停。即只能在同步代码块中使用, 同时内部要调用代码块锁住的对象的 wait()</p>
+<pre class="language-java" data-language="java"><code class="language-java">
+<span class="token class-name">Object</span> lock <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Object</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token class-name">Object</span> lock2 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Object</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 没有在代码块中, 抛异常</span>
+<span class="token comment">//lock.wait();</span>
+
+<span class="token comment">// 锁住了 lock 对象</span>
+<span class="token keyword">synchronized</span> <span class="token punctuation">(</span>lock<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+
+        <span class="token comment">// 没有锁住 lock2, 调用 lock2.wait 方法会抛异常</span>
+        <span class="token comment">//lock2.wait();</span>
+
+        <span class="token comment">// 正常沉睡</span>
+        lock<span class="token punctuation">.</span><span class="token function">wait</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span><span class="token punctuation">(</span><span class="token class-name">InterruptedException</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>wait 和 sleep 的区别</p>
+<blockquote>
+<ol>
+<li>wait 是 Object 的一个方法, sleep 是 Thread 的一个静态方法</li>
+<li>wait 需要在获取到对应的锁的时候才能使用(也就是在同步代码块, 或者同步方法内), sleep 则不需要</li>
+<li>wait 方法在执行时, 会释放自身的拥有的锁, 而 sleep 如果拥有锁, 则不会释放</li>
+<li>wait(long mills) &#x2F; sleep 方法会在指定的休眠时间达到后, 重新运行。但是 wait() 方法需要其他线程调用对应的锁对象的 notify() 或者 notifyAll() (这 2 个方法也都是需要先获取到对应的锁), 进行通知后, 才有可能继续执行 (有可能同时多个线程在等待, 但是锁只有一个, 只能在等待的线程中选择一个进行唤醒)</li>
+</ol>
+</blockquote>
+<h3 id="5-3-join"><a href="#5-3-join" class="headerlink" title="5.3 join"></a>5.3 join</h3><p>join() &#x2F; join(long mills) 是 Thread 的一个方法。主要用于让当前线程等待指定的线程执行完成。</p>
+<pre class="language-java" data-language="java"><code class="language-java">
+<span class="token class-name">Thread</span> waitThread <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Thread</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-></span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">30000L</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"son thread finish"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">InterruptedException</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+waitThread<span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+
+<span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 当前线程(主线程)进入暂停状态, 等待 t 线程执行完。</span>
+    waitThread<span class="token punctuation">.</span><span class="token function">join</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">InterruptedException</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"main thread finish"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+
+<h3 id="5-4-yeild"><a href="#5-4-yeild" class="headerlink" title="5.4 yeild"></a>5.4 yeild</h3><p>yeild() 是 Thread 的一个静态方法。<br>作用: 使当前线程主动放弃其对处理器的占用, 这可能导致当前线程被暂停。这个方法是不可靠的, 有可能调用之后, 前线程还在继续执行。</p>
+<h3 id="5-5-interrupt"><a href="#5-5-interrupt" class="headerlink" title="5.5 interrupt"></a>5.5 interrupt</h3><p>interrupt() 是 Thread 的一个方法, 调用这个方法, 可以向指定的线程发送一个信号, 让其终止, 但是最终是否能够终止, 由线程内部决定。</p>
+<p>原理: </p>
+<blockquote>
+<ol>
+<li>线程内部维护了一个 isInterrupted 的变量 (这个变量不在 Java 代码里面维护, 而是在 JVM 的代码里面), 取值范围为 0 (false), 1 (true)</li>
+<li>调用线程的 interrupt() 方法, 会把这个标志符设为 1</li>
+<li>当线程的状态从 Runnable 变为其他的状态时, 检测到这个标识为 1, 就会抛出 InterruptedException 异常, 同时把标志重新恢复为 0</li>
+<li>线程的 wait&#x2F;sleep&#x2F;join 等方法, 都可以改变线程的状态</li>
+</ol>
+</blockquote>
+<p>复位 (中断标识从 true 恢复回 false): </p>
+<ol>
+<li>可以直接调用 Thread 的 静态方法 interrupted() 可以将中断标志恢复为 false.</li>
+<li>线程抛出 InterruptedException 异常。</li>
+</ol>
+
+                
+            </div>
+            <hr/>
+        </div>
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+            <div class="card">
+                <a href="/article/2021/2781692877/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/4.jpg" class="responsive-img" alt="Java ThreadPool">
+                        
+                        <span class="card-title">Java ThreadPool</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="far fa-clock fa-fw icon-date"></i>2021-09-02
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Java/">
+                        <span class="chip bg-color">Java</span>
+                    </a>
+                    
+                    <a href="/tags/Java-%E5%B9%B6%E5%8F%91/">
+                        <span class="chip bg-color">Java 并发</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/article/2021/376265235/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/15.jpg" class="responsive-img" alt="Java PriorityQueue">
+                        
+                        <span class="card-title">Java PriorityQueue</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-08-30
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Java/">
+                        <span class="chip bg-color">Java</span>
+                    </a>
+                    
+                    <a href="/tags/Java-%E9%9B%86%E5%90%88/">
+                        <span class="chip bg-color">Java 集合</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+
+</div>
+
+
+
+<!-- 代码块功能依赖 -->
+<script type="text/javascript" src="/libs/codeBlock/codeBlockFuction.js"></script>
+
+
+  <!-- 是否加载使用自带的 prismjs. -->
+  <script type="text/javascript" src="/libs/prism/prism.min.js"></script>
+
+
+<!-- 代码语言 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeLang.js"></script>
+
+
+<!-- 代码块复制 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeCopy.js"></script>
+
+
+<!-- 代码块收缩 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeShrink.js"></script>
+
+
+
+    </div>
+    <div id="toc-aside" class="expanded col l3 hide-on-med-and-down">
+        <div class="toc-widget card" style="background-color: white;">
+            <div class="toc-title"><i class="far fa-list-alt"></i>&nbsp;&nbsp;目录</div>
+            <div id="toc-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOC 悬浮按钮. -->
+
+<div id="floating-toc-btn" class="hide-on-med-and-down">
+    <a class="btn-floating btn-large bg-color">
+        <i class="fas fa-list-ul"></i>
+    </a>
+</div>
+
+
+<script src="/libs/tocbot/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '#articleContent',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            collapseDepth: Number('0'),
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+
+        
+        /* 修复文章卡片 div 的宽度. */
+        let fixPostCardWidth = function (srcId, targetId) {
+            let srcDiv = $('#' + srcId);
+            if (srcDiv.length === 0) {
+                return;
+            }
+
+            let w = srcDiv.width();
+            if (w >= 450) {
+                w = w + 21;
+            } else if (w >= 350 && w < 450) {
+                w = w + 18;
+            } else if (w >= 300 && w < 350) {
+                w = w + 16;
+            } else {
+                w = w + 14;
+            }
+            $('#' + targetId).width(w);
+        };
+
+        // 切换TOC目录展开收缩的相关操作.
+        const expandedClass = 'expanded';
+        let $tocAside = $('#toc-aside');
+        let $mainContent = $('#main-content');
+        $('#floating-toc-btn .btn-floating').click(function () {
+            if ($tocAside.hasClass(expandedClass)) {
+                $tocAside.removeClass(expandedClass).hide();
+                $mainContent.removeClass('l9');
+            } else {
+                $tocAside.addClass(expandedClass).show();
+                $mainContent.addClass('l9');
+            }
+            fixPostCardWidth('artDetail', 'prenext-posts');
+        });
+        
+    });
+</script>
+
+    
+
+</main>
+
+
+
+
+    <footer class="page-footer bg-color">
+    
+
+    <div class="container row center-align"
+         style="margin-bottom: 0px !important;">
+        <div class="copy-right">
+            Copyright&nbsp;&copy;
+            
+                <span id="year">2019-2024</span>
+            
+            <br/>
+
+            Powered by&nbsp;<a href="https://hexo.io/" target="_blank">Hexo</a>
+            &nbsp; | &nbsp;&nbsp;Theme <a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">Matery</a>
+
+            
+            <br>
+            
+            
+                <span id="busuanzi_container_site_pv">
+                    总访问量:&nbsp;<span id="busuanzi_value_site_pv" class="white-color"></span>
+                </span>
+            
+            
+                <span id="busuanzi_container_site_uv">
+                    &nbsp; | &nbsp;&nbsp;总访问人数:&nbsp; <span id="busuanzi_value_site_uv" class="white-color"></span>
+                </span>
+            
+            <br>
+
+            <!-- 运行天数提醒. -->
+            
+            <br>
+            
+        </div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+    <!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fas fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字"
+                   class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+$(function () {
+    var searchFunc = function (path, search_id, content_id) {
+        'use strict';
+        $.ajax({
+            url: path,
+            dataType: "xml",
+            success: function (xmlResponse) {
+                // get the contents from search data
+                var datas = $("entry", xmlResponse).map(function () {
+                    return {
+                        title: $("title", this).text(),
+                        content: $("content", this).text(),
+                        url: $("url", this).text()
+                    };
+                }).get();
+                var $input = document.getElementById(search_id);
+                var $resultContent = document.getElementById(content_id);
+                $input.addEventListener('input', function () {
+                    var str = '<ul class=\"search-result-list\">';
+                    var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                    $resultContent.innerHTML = "";
+                    if (this.value.trim().length <= 0) {
+                        return;
+                    }
+                    // perform local searching
+                    datas.forEach(function (data) {
+                        var isMatch = true;
+                        var data_title = data.title.trim().toLowerCase();
+                        var data_content = data.content.trim().replace(/<[^>]+>/g, "").toLowerCase();
+                        var data_url = data.url;
+                        data_url = data_url.indexOf('/') === 0 ? data.url : '/' + data_url;
+                        var index_title = -1;
+                        var index_content = -1;
+                        var first_occur = -1;
+                        // only match artiles with not empty titles and contents
+                        if (data_title !== '' && data_content !== '') {
+                            keywords.forEach(function (keyword, i) {
+                                index_title = data_title.indexOf(keyword);
+                                index_content = data_content.indexOf(keyword);
+                                if (index_title < 0 && index_content < 0) {
+                                    isMatch = false;
+                                } else {
+                                    if (index_content < 0) {
+                                        index_content = 0;
+                                    }
+                                    if (i === 0) {
+                                        first_occur = index_content;
+                                    }
+                                }
+                            });
+                        }
+                        // show search results
+                        if (isMatch) {
+                            str += "<li><a href='" + data_url + "' class='search-result-title'>" + data_title + "</a>";
+                            var content = data.content.trim().replace(/<[^>]+>/g, "");
+                            if (first_occur >= 0) {
+                                // cut out 100 characters
+                                var start = first_occur - 20;
+                                var end = first_occur + 80;
+                                if (start < 0) {
+                                    start = 0;
+                                }
+                                if (start === 0) {
+                                    end = 100;
+                                }
+                                if (end > content.length) {
+                                    end = content.length;
+                                }
+                                var match_content = content.substr(start, end);
+                                // highlight all keywords
+                                keywords.forEach(function (keyword) {
+                                    var regS = new RegExp(keyword, "gi");
+                                    match_content = match_content.replace(regS, "<em class=\"search-keyword\">" + keyword + "</em>");
+                                });
+
+                                str += "<p class=\"search-result\">" + match_content + "...</p>"
+                            }
+                            str += "</li>";
+                        }
+                    });
+                    str += "</ul>";
+                    $resultContent.innerHTML = str;
+                });
+            }
+        });
+    };
+
+    searchFunc('/search.xml', 'searchInput', 'searchResult');
+});
+</script>
+
+    <!-- 白天和黑夜主题 -->
+<div class="stars-con">
+    <div id="stars"></div>
+    <div id="stars2"></div>
+    <div id="stars3"></div>  
+</div>
+
+<script>
+    function switchNightMode() {
+        $('<div class="Cuteen_DarkSky"><div class="Cuteen_DarkPlanet"></div></div>').appendTo($('body')),
+        setTimeout(function () {
+            $('body').hasClass('DarkMode') 
+            ? ($('body').removeClass('DarkMode'), localStorage.setItem('isDark', '0'), $('#sum-moon-icon').removeClass("fa-sun").addClass('fa-moon')) 
+            : ($('body').addClass('DarkMode'), localStorage.setItem('isDark', '1'), $('#sum-moon-icon').addClass("fa-sun").removeClass('fa-moon')),
+            
+            setTimeout(function () {
+            $('.Cuteen_DarkSky').fadeOut(1e3, function () {
+                $(this).remove()
+            })
+            }, 2e3)
+        })
+    }
+</script>
+
+    <!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+</div>
+
+
+    <script src="/libs/materialize/materialize.min.js"></script>
+    <script src="/libs/masonry/masonry.pkgd.min.js"></script>
+    <script src="/libs/aos/aos.js"></script>
+    <script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+    <script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+    <script src="/js/matery.js"></script>
+
+    
+
+    
+    
+    
+
+    <!-- 雪花特效 -->
+    
+
+    <!-- 鼠标星星特效 -->
+    
+
+     
+        <script src="https://ssl.captcha.qq.com/TCaptcha.js"></script>
+        <script src="/libs/others/TencentCaptcha.js"></script>
+        <button id="TencentCaptcha" data-appid="xxxxxxxxxx" data-cbfn="callback" type="button" hidden></button>
+    
+
+    <!-- Baidu Analytics -->
+
+    <!-- Baidu Push -->
+
+<script>
+    (function () {
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        } else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+
+    
+    
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+    
+
+    
+
+    
+
+    <!--腾讯兔小巢-->
+    
+    
+
+    
+
+    
+
+    
+    <script src="/libs/instantpage/instantpage.js" type="module"></script>
+    
+
+</body>
+
+</html>

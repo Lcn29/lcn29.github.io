@@ -1,0 +1,1022 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="Redis 主从复制分析 - 基础, Lcn29">
+    <meta name="description" content="1 主从节点运行数据的存储在主从复制中, 对于主节点, 从节点就是自身的一个客户端, 所以和普通的客户端一样, 会被组织为一个 client 的结构体。 
+typedef struct client &amp;#123;
+    // 省略
+&amp;#1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+    <title>Redis 主从复制分析 - 基础 | Lcn29</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+
+
+    <!-- bg-cover style     -->
+
+
+
+<link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+<link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+<link rel="stylesheet" type="text/css" href="/css/matery.css">
+<link rel="stylesheet" type="text/css" href="/css/my.css">
+<link rel="stylesheet" type="text/css" href="/css/dark.css" media="none" onload="if(media!='all')media='all'">
+
+
+
+
+    <link rel="stylesheet" href="/libs/tocbot/tocbot.css">
+    <link rel="stylesheet" href="/css/post.css">
+
+
+
+
+    
+
+
+
+    <script src="/libs/jquery/jquery-3.6.0.min.js"></script>
+
+<meta name="generator" content="Hexo 6.3.0"><link rel="alternate" href="/atom.xml" title="Lcn29" type="application/atom+xml">
+</head>
+
+
+<body>
+    <header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.svg" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">Lcn29</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fas fa-bars"></i></a>
+<ul class="right nav-menu">
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/" class="waves-effect waves-light">
+      
+      <i class="fas fa-home" style="zoom: 0.6;"></i>
+      
+      <span>首页</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/tags" class="waves-effect waves-light">
+      
+      <i class="fas fa-tags" style="zoom: 0.6;"></i>
+      
+      <span>标签</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/archives" class="waves-effect waves-light">
+      
+      <i class="fas fa-archive" style="zoom: 0.6;"></i>
+      
+      <span>归档</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/about" class="waves-effect waves-light">
+      
+      <i class="fas fa-user-circle" style="zoom: 0.6;"></i>
+      
+      <span>关于</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/friends" class="waves-effect waves-light">
+      
+      <i class="fas fa-address-book" style="zoom: 0.6;"></i>
+      
+      <span>友链</span>
+    </a>
+    
+  </li>
+  
+  <li>
+    <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+      <i id="searchIcon" class="fas fa-search" title="搜索" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+  <li>
+    <a href="javascript:;" class="waves-effect waves-light" onclick="switchNightMode()" title="深色/浅色模式" >
+      <i id="sum-moon-icon" class="fas fa-sun" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+</ul>
+
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.svg" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">Lcn29</div>
+        <div class="logo-desc">
+            
+            Technical System
+            
+        </div>
+    </div>
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li class="m-nav-item">
+	  
+		<a href="/" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-home"></i>
+			
+			首页
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/tags" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-tags"></i>
+			
+			标签
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/archives" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-archive"></i>
+			
+			归档
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/about" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-user-circle"></i>
+			
+			关于
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/friends" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-address-book"></i>
+			
+			友链
+		</a>
+          
+        </li>
+        
+        
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="https://github.com/lcn29" class="waves-effect waves-light" target="_blank">
+                <i class="fab fa-github-square fa-fw"></i>Fork Me
+            </a>
+        </li>
+        
+    </ul>
+</div>
+
+
+        </div>
+
+        
+            <style>
+    .nav-transparent .github-corner {
+        display: none !important;
+    }
+
+    .github-corner {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        right: 0;
+        border: 0;
+        transform: scale(1.1);
+    }
+
+    .github-corner svg {
+        color: #121317;
+        fill: #fff;
+        height: 64px;
+        width: 64px;
+    }
+
+    .github-corner:hover .octo-arm {
+        animation: a 0.56s ease-in-out;
+    }
+
+    .github-corner .octo-arm {
+        animation: none;
+    }
+
+    @keyframes a {
+        0%,
+        to {
+            transform: rotate(0);
+        }
+        20%,
+        60% {
+            transform: rotate(-25deg);
+        }
+        40%,
+        80% {
+            transform: rotate(10deg);
+        }
+    }
+</style>
+
+<a href="https://github.com/lcn29" class="github-corner tooltipped hide-on-med-and-down" target="_blank"
+   data-tooltip="Fork Me" data-position="left" data-delay="50">
+    <svg viewBox="0 0 250 250" aria-hidden="true">
+        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+        <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
+              fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+        <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
+              fill="currentColor" class="octo-body"></path>
+    </svg>
+</a>
+        
+    </nav>
+
+</header>
+
+    
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/2.jpg')">
+    <div class="container" style="right: 0px;left: 0px;">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <h1 class="description center-align post-title">Redis 主从复制分析 - 基础</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<main class="post-container content">
+
+    
+    <div class="row">
+    <div id="main-content" class="col s12 m12 l9">
+        <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/Redis/">
+                                <span class="chip bg-color">Redis</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2024-07-22
+                </div>
+                
+
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-check fa-fw"></i>更新日期:&nbsp;&nbsp;
+                    2024-10-10
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
+                    2.6k
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                    9 分
+                </div>
+                
+
+                
+                    <div id="busuanzi_container_page_pv" class="info-break-policy">
+                        <i class="far fa-eye fa-fw"></i>阅读次数:&nbsp;&nbsp;
+                        <span id="busuanzi_value_page_pv"></span>
+                    </div>
+				
+            </div>
+        </div>
+        <hr class="clearfix">
+
+        
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.min.css">
+        
+
+        
+
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <h2 id="1-主从节点运行数据的存储"><a href="#1-主从节点运行数据的存储" class="headerlink" title="1 主从节点运行数据的存储"></a>1 主从节点运行数据的存储</h2><p>在主从复制中, 对于主节点, 从节点就是自身的一个客户端, 所以和普通的客户端一样, 会被组织为一个 client 的结构体。 </p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> <span class="token class-name">client</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 省略</span>
+<span class="token punctuation">&#125;</span> client<span class="token punctuation">;</span></code></pre>
+
+<p>同时无论是从节点, 还是主节点, 在运行中的数据都存放在一个 redisServer 的结构体中, 定义如下:</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token class-name">redisServer</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 省略</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+
+<p>在主从复制中的 client 和 redisServer 都是用来存储运行中的一些数据。<br>具体里面存储的数据是什么, 在后面的源码分析中, 逐渐了解。</p>
+<h2 id="2-主从节点复制中的状态枚举"><a href="#2-主从节点复制中的状态枚举" class="headerlink" title="2 主从节点复制中的状态枚举"></a>2 主从节点复制中的状态枚举</h2><h3 id="2-1-从节点自身状态的状态枚举"><a href="#2-1-从节点自身状态的状态枚举" class="headerlink" title="2.1 从节点自身状态的状态枚举"></a>2.1 从节点自身状态的状态枚举</h3><p>整个主从复制是一个复杂的过程, 所以在从节点中, 维护了一套状态, 通过状态来判断下一步的流程 (有点像状态模式)</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// 没有开启主从复制功能, 默认的状态</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_NONE</span> <span class="token expression"><span class="token number">0</span></span></span>
+
+<span class="token comment">// 开启了主从复制, 但是还没连接上主节点</span>
+<span class="token comment">// 执行了 slaveof/replicaof 命令时, 从节点的切换成的状态 </span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_CONNECT</span> <span class="token expression"><span class="token number">1</span></span></span>
+
+<span class="token comment">// 正在连接主节点, 从节点开始连接主节点</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_CONNECTING</span> <span class="token expression"><span class="token number">2</span></span></span>
+
+<span class="token comment">/* --- 握手阶段的状态开始, 整个握手过程必须按照下面的顺序进行 --- */</span>
+
+<span class="token comment">// 从节点发送了 ping, 等待主节点 pong  应答 (正常情况, 主节点会回复一个 pong)</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_RECEIVE_PONG</span> <span class="token expression"><span class="token number">3</span></span></span>
+
+<span class="token comment">// 准备发送认证密码给主节点</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_SEND_AUTH</span> <span class="token expression"><span class="token number">4</span></span></span>
+
+<span class="token comment">// 等待主节点响应认证结果应答</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_RECEIVE_AUTH</span> <span class="token expression"><span class="token number">5</span></span></span>
+
+<span class="token comment">// 准备发送从节点的监听的端口</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_SEND_PORT</span> <span class="token expression"><span class="token number">6</span> </span></span>
+
+<span class="token comment">// 等待主节点响应收到从节点端口</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_RECEIVE_PORT</span> <span class="token expression"><span class="token number">7</span></span></span>
+
+<span class="token comment">// 发送主从复制配置的监听的 IP 地址</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_SEND_IP</span> <span class="token expression"><span class="token number">8</span> </span></span>
+
+<span class="token comment">// 等待主节点响应收到从节点的 IP 地址</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_RECEIVE_IP</span> <span class="token expression"><span class="token number">9</span></span></span>
+
+<span class="token comment">// 准备发送从节点支持的同步能力 </span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_SEND_CAPA</span> <span class="token expression"><span class="token number">10</span> </span></span>
+
+<span class="token comment">// 等待主节点响应收到支持的同步能力的应答</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_RECEIVE_CAPA</span> <span class="token expression"><span class="token number">11</span></span></span>
+
+<span class="token comment">// 向主节点发送 psync 命令, 请求同步复制</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_SEND_PSYNC</span> <span class="token expression"><span class="token number">12</span> </span></span>
+
+<span class="token comment">// 等待 psync 应答</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_RECEIVE_PSYNC</span> <span class="token expression"><span class="token number">13</span></span></span>
+
+<span class="token comment">/* --- 握手阶段的状态结束 --- */</span>
+
+<span class="token comment">// 正在接收从主节点发送过来的 RDB 文件</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_TRANSFER</span> <span class="token expression"><span class="token number">14</span> </span></span>
+
+<span class="token comment">// 已经连接状态</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">REPL_STATE_CONNECTED</span> <span class="token expression"><span class="token number">15</span> </span></span></code></pre>
+
+<h3 id="2-2-主节点保存从节点的状态枚举"><a href="#2-2-主节点保存从节点的状态枚举" class="headerlink" title="2.2 主节点保存从节点的状态枚举"></a>2.2 主节点保存从节点的状态枚举</h3><p>对于主节点而言, 需要知道从节点当前的状态的, 好进行对应的操作, 但是不需要那么详细, 主节点也维护了一套从节点运行时的状态</p>
+<pre class="language-c" data-language="c"><code class="language-c">
+<span class="token comment">// 等待 bgsave (生成 RDB 文件的函数) 的开始</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">SLAVE_STATE_WAIT_BGSAVE_START</span> <span class="token expression"><span class="token number">6</span></span></span>
+
+<span class="token comment">// 等待 bgsave 的结束, 也就是 RDB 文件的创建结束</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">SLAVE_STATE_WAIT_BGSAVE_END</span> <span class="token expression"><span class="token number">7</span></span></span>
+
+<span class="token comment">// 发送一个 RDB 文件到从节点</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">SLAVE_STATE_SEND_BULK</span> <span class="token expression"><span class="token number">8</span></span></span>
+
+<span class="token comment">// 从节点在线</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">SLAVE_STATE_ONLINE</span> <span class="token expression"><span class="token number">9</span></span></span></code></pre>
+
+<h2 id="3-从节点复制能力"><a href="#3-从节点复制能力" class="headerlink" title="3 从节点复制能力"></a>3 从节点复制能力</h2><h3 id="3-1-全量复制和部分复制"><a href="#3-1-全量复制和部分复制" class="headerlink" title="3.1 全量复制和部分复制"></a>3.1 全量复制和部分复制</h3><p>整个主从复制, 大体可以概括为 3 种情况</p>
+<blockquote>
+<ol>
+<li>一开始, 主从节点建立连接, 这时候主节点需要将自身所有的数据全部同步给从节点</li>
+<li>运行中, 主节点需要将自己处理的命令, 发送一份给从节点, 这样才能保证主从的一致</li>
+<li>运行中, 出现了网络波动, 服务重启等情况, 重新恢复正常时, 主从需要重新通过<strong>复制</strong>, 让彼此的数据重新保持一致</li>
+</ol>
+</blockquote>
+<p><strong>第一步</strong><br>主从建立了连接, 主节点会将自身所有的数据生成为一个 RDB 的文件, 然后以 <strong>EOF</strong> 的流格式发送给从节点。<br>当然, Redis 在 2.8.18 版本开始支持<strong>无盘复制</strong>, 子进程直接将 RDB 通过网络发送给从服务器, 不使用磁盘作为中间存储。<br>主要是防止比较低速的磁盘, 写入缓慢, 影响到整个应用。<br>这个主节点将所有数据发送给从节点的操作, 叫做<strong>全量复制</strong>。  </p>
+<p><strong>第二步</strong><br>在运行中, 主节点处理完了命令, 会遍历自身维护的所有的从节点, 将自身执行的命令发送给所有状态符合的从节点, 保证数据的一致。<br>可以看出来, 第一, 二步的操作是一个比较简单的过程, 而第三步, 在兼容性能的情况下, 将会是一个复杂的过程。</p>
+<p><strong>第三步</strong><br>主从节点之间出现网络波动, 从节点重启等行为后, 主从之间就可能出现数据不一致。<br>在 Reids 2.8 版本之前, Reids 的操作就是通过在来一次<strong>全量复制</strong>, 保证了主从节点数据的一致性。</p>
+<p><strong>全量复制</strong> 我们可以很容易就想到这是一个耗时, 耗资源的过程, 比如 fork 子进程, RDB 文件生成, 数据发送。<br>所以为了尽量避免<strong>全量复制</strong>的出现, 在 Redis 2.8 版本, 引入了一个<strong>复制积压缓冲区</strong>的缓存区, 主节点执行的命令, 会先保存一份到这个缓存区<br>(这个缓存区是一个环形的数组, 从头写到尾, 写满了, 重新回到头, 继续写, 新的数据覆盖掉旧的, 同时所有的从节点共用一个缓冲区)。</p>
+<p><img src="https://pic.imgdb.cn/item/669e267fd9c307b7e9c9b2dc.png" alt="Alt &#39;复制积压缓冲区&#39;"></p>
+<p>大体的实现如下</p>
+<blockquote>
+<ol>
+<li>主节点启动的时候, 会生成一个 run_id (用来确保复制的主节点的唯一性)</li>
+<li>同时生成一个复制积压缓冲区, 并且有一个变量, 记录着缓冲区中当前最旧的数据的位置, 假设为 min, 假设复制积压缓冲区的容量为 len</li>
+<li>从节点保存着主节点生成的 run_id, 同时维持着一个变量, 当前自身最新的数据在复制积压缓冲区的哪个位置, 也就是复制偏移量, 假设为 offset</li>
+<li>当前主从复制出现问题时, 主从重新建立连接后, 从节点会将 run_id 和 offset 发送给主节点</li>
+<li>主节点收到后, 如果 run_id 和自身的一致, 同时 min &lt;&#x3D; offset &lt;&#x3D; min + len, 也就是需要开始复制的位置的数据, 可以在缓存区中找到, 那么从这个位置进行<strong>部分复制</strong></li>
+<li>主节点如果收到的 run_id 不一致, 或者 offset &lt; min 或者 offset &gt; min + len, 也就是需要开始复制的位置不在缓冲区中, 直接进行<strong>全量复制</strong></li>
+</ol>
+</blockquote>
+<p><img src="https://pic.imgdb.cn/item/669e26a5d9c307b7e9c9d3de.png" alt="Alt &#39;部分复制过程&#39;"></p>
+<p>这个的功能叫做 <strong>psync</strong>, 可以理解为 <strong>部分复制</strong>, 这个功能可以减少<strong>全量复制</strong>的发生。<br>但是这个功能有些问题, 就是从节点需要维护好 run_id, run_id 需要和从节点的一致, 同时 offset 需要在复制积压缓存中, 这其中</p>
+<blockquote>
+<ol>
+<li>slave 维护性重启, run_id 和 offset 会丢失</li>
+<li>主节点故障转移, run_id 会改变<br>都会导致从节点直接<strong>全量复制</strong></li>
+</ol>
+</blockquote>
+<p>所以在 Redis 4.0 针对上面的 2 种情况进行了优化, 使其在上面说的情况下, 可以进行使用<strong>部分复制</strong>, 这个升级的功能也被叫做 <strong>psync2</strong>。<br>涉及的几个名词</p>
+<blockquote>
+<ol>
+<li>replid1, 每个 Redis 实例启动就会自动产生的一个 id, 这个实例变成从节点, 会被替换为主节点的 replid1</li>
+<li>replid2, 默认初始为 0, 用于存储上次主节点的 replid1</li>
+</ol>
+</blockquote>
+<p>当然还要其他的情况, 会导致<strong>部分复制</strong>的失效, 比如: 直接重启主节点, 这是复制积压缓冲区的数据丢了, 没法<strong>部分复制</strong></p>
+<p>所以 <strong>psync2</strong> 只是针对上面的 2 种情况进行了优化, 其他的情况, 还是会直接进入到<strong>全量复制</strong></p>
+<h4 id="3-2-从节点重启的部分复制"><a href="#3-2-从节点重启的部分复制" class="headerlink" title="3.2 从节点重启的部分复制"></a>3.2 从节点重启的部分复制</h4><p>在 Redis 4.0 中</p>
+<blockquote>
+<ol>
+<li>Redis 关闭时, 会把复制相关的信息 replid1 和 offset 作为辅助信息保存到 RDB 文件</li>
+<li>Redis 重启时, 会将从 RDB 文件中重新加载对应的复制信息到对应的字段</li>
+<li>在进行同步时, 将 replid 和 offset 发送给主节点, 尝试进行部分复制</li>
+</ol>
+</blockquote>
+<h4 id="3-3-主节点故障转移的部分复制"><a href="#3-3-主节点故障转移的部分复制" class="headerlink" title="3.3 主节点故障转移的部分复制"></a>3.3 主节点故障转移的部分复制</h4><p>当前的场景主要是在 Redis Cluster 中的故障转移情景的分析, 在单纯的主从复制中, 主节点重启, 挂了等, 都无法避免<strong>全量复制</strong>(单纯的主从复制不会触发故障转移)。</p>
+<p>在 Redis 4.0 中</p>
+<blockquote>
+<ol>
+<li>使用了 2 组 replid 和 offset</li>
+<li>从节点也会开启复制积压缓冲区功能, 以便从节点故障切换变化为主节点后, 其他落后的从节点可以进行同步</li>
+<li>第一组 replid 和 offset, 如果是主节点, 表示的是自己的 replid 和复制偏移量 offset, 从节点表示的是主节点的 replid (确保级联时, replid 都是一致的) 和自身同步主节点的赋值偏移量</li>
+<li>第二组 replid 和 offset, 无论是主从, 都表示自己的上次主节点的 replid 和 offset, 没有则默认为 0 和 -1</li>
+</ol>
+</blockquote>
+<p>故障转移时</p>
+<blockquote>
+<ol>
+<li>从节点中被选举为主节点的节点, 先将自身的 replid1 和 offset1 复制给 replid2 和 offset2, 给自己重新生成另一组 replid 和 offset</li>
+<li>原主节点这时会变为从节点, 也会将自身的 replid1 和 offset1 复制给 replid2 和 offset2, 更新 replid1 和 offset1 为新的主节点的 replid1 和 offset1</li>
+<li>原主节点其他没有被选为主节点的从节点, 同样会将当前的 replid1 和 offest1 复制给 replid2 和 offset2, 更新 replid1 和 offset1 为新的主节点的 replid1 和 offset1</li>
+<li>原主节点和其他从节点和新主节点进行同步时, 会先发送自身的 replid2 和 offset2, 主节点会根据这个信息, 判断是否可以进行部分复制</li>
+</ol>
+</blockquote>
+<p>上面说的 3 个版本的复制能力, 在代码中分别叫做 <strong>EOF</strong>, <strong>psync</strong>, <strong>psync2</strong>。</p>
+<p>复制能力的定义如下:  </p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// 什么能力都不支持</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">SLAVE_CAPA_NONE</span> <span class="token expression"><span class="token number">0</span></span></span>
+
+<span class="token comment">// 支持 EOF, 支持全量复制, 可以解析 RDB EOF 流式处理格式</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">SLAVE_CAPA_EOF</span> <span class="token expression"><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">&lt;&lt;</span><span class="token number">0</span><span class="token punctuation">)</span> </span></span>
+
+<span class="token comment">// 支持 psync2, 支持部分复制</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">SLAVE_CAPA_PSYNC2</span> <span class="token expression"><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">&lt;&lt;</span><span class="token number">1</span><span class="token punctuation">)</span></span></span></code></pre>
+
+<p>对于 Redis 从节点, 可能因为版本问题, 存在着复制能力不一致的情况, 所以在主从复制开始的阶段, 从节点需要将自身支持的复制能力发送给主节点,<br>主节点才能以正确的方式同步数据给从节点。</p>
+<h2 id="4-参考"><a href="#4-参考" class="headerlink" title="4 参考"></a>4 参考</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_42409788/article/details/104246731">redis psync1和psync2 同步详解</a></p>
+
+                
+            </div>
+            <hr/>
+        </div>
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+            <div class="card">
+                <a href="/article/2024/3467330528/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/5.jpg" class="responsive-img" alt="Redis 主从复制 - 源码">
+                        
+                        <span class="card-title">Redis 主从复制 - 源码</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="far fa-clock fa-fw icon-date"></i>2024-08-26
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Redis/">
+                        <span class="chip bg-color">Redis</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/article/2024/3467330523/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/7.jpg" class="responsive-img" alt="Redis 主从复制分析 - 使用">
+                        
+                        <span class="card-title">Redis 主从复制分析 - 使用</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2024-07-05
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Redis/">
+                        <span class="chip bg-color">Redis</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+
+</div>
+
+
+
+<!-- 代码块功能依赖 -->
+<script type="text/javascript" src="/libs/codeBlock/codeBlockFuction.js"></script>
+
+
+  <!-- 是否加载使用自带的 prismjs. -->
+  <script type="text/javascript" src="/libs/prism/prism.min.js"></script>
+
+
+<!-- 代码语言 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeLang.js"></script>
+
+
+<!-- 代码块复制 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeCopy.js"></script>
+
+
+<!-- 代码块收缩 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeShrink.js"></script>
+
+
+
+    </div>
+    <div id="toc-aside" class="expanded col l3 hide-on-med-and-down">
+        <div class="toc-widget card" style="background-color: white;">
+            <div class="toc-title"><i class="far fa-list-alt"></i>&nbsp;&nbsp;目录</div>
+            <div id="toc-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOC 悬浮按钮. -->
+
+<div id="floating-toc-btn" class="hide-on-med-and-down">
+    <a class="btn-floating btn-large bg-color">
+        <i class="fas fa-list-ul"></i>
+    </a>
+</div>
+
+
+<script src="/libs/tocbot/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '#articleContent',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            collapseDepth: Number('0'),
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+
+        
+        /* 修复文章卡片 div 的宽度. */
+        let fixPostCardWidth = function (srcId, targetId) {
+            let srcDiv = $('#' + srcId);
+            if (srcDiv.length === 0) {
+                return;
+            }
+
+            let w = srcDiv.width();
+            if (w >= 450) {
+                w = w + 21;
+            } else if (w >= 350 && w < 450) {
+                w = w + 18;
+            } else if (w >= 300 && w < 350) {
+                w = w + 16;
+            } else {
+                w = w + 14;
+            }
+            $('#' + targetId).width(w);
+        };
+
+        // 切换TOC目录展开收缩的相关操作.
+        const expandedClass = 'expanded';
+        let $tocAside = $('#toc-aside');
+        let $mainContent = $('#main-content');
+        $('#floating-toc-btn .btn-floating').click(function () {
+            if ($tocAside.hasClass(expandedClass)) {
+                $tocAside.removeClass(expandedClass).hide();
+                $mainContent.removeClass('l9');
+            } else {
+                $tocAside.addClass(expandedClass).show();
+                $mainContent.addClass('l9');
+            }
+            fixPostCardWidth('artDetail', 'prenext-posts');
+        });
+        
+    });
+</script>
+
+    
+
+</main>
+
+
+
+
+    <footer class="page-footer bg-color">
+    
+
+    <div class="container row center-align"
+         style="margin-bottom: 0px !important;">
+        <div class="copy-right">
+            Copyright&nbsp;&copy;
+            
+                <span id="year">2019-2024</span>
+            
+            <br/>
+
+            Powered by&nbsp;<a href="https://hexo.io/" target="_blank">Hexo</a>
+            &nbsp; | &nbsp;&nbsp;Theme <a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">Matery</a>
+
+            
+            <br>
+            
+            
+                <span id="busuanzi_container_site_pv">
+                    总访问量:&nbsp;<span id="busuanzi_value_site_pv" class="white-color"></span>
+                </span>
+            
+            
+                <span id="busuanzi_container_site_uv">
+                    &nbsp; | &nbsp;&nbsp;总访问人数:&nbsp; <span id="busuanzi_value_site_uv" class="white-color"></span>
+                </span>
+            
+            <br>
+
+            <!-- 运行天数提醒. -->
+            
+            <br>
+            
+        </div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+    <!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fas fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字"
+                   class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+$(function () {
+    var searchFunc = function (path, search_id, content_id) {
+        'use strict';
+        $.ajax({
+            url: path,
+            dataType: "xml",
+            success: function (xmlResponse) {
+                // get the contents from search data
+                var datas = $("entry", xmlResponse).map(function () {
+                    return {
+                        title: $("title", this).text(),
+                        content: $("content", this).text(),
+                        url: $("url", this).text()
+                    };
+                }).get();
+                var $input = document.getElementById(search_id);
+                var $resultContent = document.getElementById(content_id);
+                $input.addEventListener('input', function () {
+                    var str = '<ul class=\"search-result-list\">';
+                    var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                    $resultContent.innerHTML = "";
+                    if (this.value.trim().length <= 0) {
+                        return;
+                    }
+                    // perform local searching
+                    datas.forEach(function (data) {
+                        var isMatch = true;
+                        var data_title = data.title.trim().toLowerCase();
+                        var data_content = data.content.trim().replace(/<[^>]+>/g, "").toLowerCase();
+                        var data_url = data.url;
+                        data_url = data_url.indexOf('/') === 0 ? data.url : '/' + data_url;
+                        var index_title = -1;
+                        var index_content = -1;
+                        var first_occur = -1;
+                        // only match artiles with not empty titles and contents
+                        if (data_title !== '' && data_content !== '') {
+                            keywords.forEach(function (keyword, i) {
+                                index_title = data_title.indexOf(keyword);
+                                index_content = data_content.indexOf(keyword);
+                                if (index_title < 0 && index_content < 0) {
+                                    isMatch = false;
+                                } else {
+                                    if (index_content < 0) {
+                                        index_content = 0;
+                                    }
+                                    if (i === 0) {
+                                        first_occur = index_content;
+                                    }
+                                }
+                            });
+                        }
+                        // show search results
+                        if (isMatch) {
+                            str += "<li><a href='" + data_url + "' class='search-result-title'>" + data_title + "</a>";
+                            var content = data.content.trim().replace(/<[^>]+>/g, "");
+                            if (first_occur >= 0) {
+                                // cut out 100 characters
+                                var start = first_occur - 20;
+                                var end = first_occur + 80;
+                                if (start < 0) {
+                                    start = 0;
+                                }
+                                if (start === 0) {
+                                    end = 100;
+                                }
+                                if (end > content.length) {
+                                    end = content.length;
+                                }
+                                var match_content = content.substr(start, end);
+                                // highlight all keywords
+                                keywords.forEach(function (keyword) {
+                                    var regS = new RegExp(keyword, "gi");
+                                    match_content = match_content.replace(regS, "<em class=\"search-keyword\">" + keyword + "</em>");
+                                });
+
+                                str += "<p class=\"search-result\">" + match_content + "...</p>"
+                            }
+                            str += "</li>";
+                        }
+                    });
+                    str += "</ul>";
+                    $resultContent.innerHTML = str;
+                });
+            }
+        });
+    };
+
+    searchFunc('/search.xml', 'searchInput', 'searchResult');
+});
+</script>
+
+    <!-- 白天和黑夜主题 -->
+<div class="stars-con">
+    <div id="stars"></div>
+    <div id="stars2"></div>
+    <div id="stars3"></div>  
+</div>
+
+<script>
+    function switchNightMode() {
+        $('<div class="Cuteen_DarkSky"><div class="Cuteen_DarkPlanet"></div></div>').appendTo($('body')),
+        setTimeout(function () {
+            $('body').hasClass('DarkMode') 
+            ? ($('body').removeClass('DarkMode'), localStorage.setItem('isDark', '0'), $('#sum-moon-icon').removeClass("fa-sun").addClass('fa-moon')) 
+            : ($('body').addClass('DarkMode'), localStorage.setItem('isDark', '1'), $('#sum-moon-icon').addClass("fa-sun").removeClass('fa-moon')),
+            
+            setTimeout(function () {
+            $('.Cuteen_DarkSky').fadeOut(1e3, function () {
+                $(this).remove()
+            })
+            }, 2e3)
+        })
+    }
+</script>
+
+    <!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+</div>
+
+
+    <script src="/libs/materialize/materialize.min.js"></script>
+    <script src="/libs/masonry/masonry.pkgd.min.js"></script>
+    <script src="/libs/aos/aos.js"></script>
+    <script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+    <script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+    <script src="/js/matery.js"></script>
+
+    
+
+    
+    
+    
+
+    <!-- 雪花特效 -->
+    
+
+    <!-- 鼠标星星特效 -->
+    
+
+     
+        <script src="https://ssl.captcha.qq.com/TCaptcha.js"></script>
+        <script src="/libs/others/TencentCaptcha.js"></script>
+        <button id="TencentCaptcha" data-appid="xxxxxxxxxx" data-cbfn="callback" type="button" hidden></button>
+    
+
+    <!-- Baidu Analytics -->
+
+    <!-- Baidu Push -->
+
+<script>
+    (function () {
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        } else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+
+    
+    
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+    
+
+    
+
+    
+
+    <!--腾讯兔小巢-->
+    
+    
+
+    
+
+    
+
+    
+    <script src="/libs/instantpage/instantpage.js" type="module"></script>
+    
+
+</body>
+
+</html>

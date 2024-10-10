@@ -1,0 +1,1374 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="Redis 命令处理过程, Lcn29">
+    <meta name="description" content="我们知道 Redis 是一个基于内存的高性能键值数据库, 它支持多种数据结构, 提供了丰富的命令, 可以用来实现缓存、消息队列、分布式锁等功能。而在享受 Redis 带来的种种好处时, 是否曾好奇过 Redis 是如何处理我们发往它的命令的">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+    <title>Redis 命令处理过程 | Lcn29</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+
+
+    <!-- bg-cover style     -->
+
+
+
+<link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+<link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+<link rel="stylesheet" type="text/css" href="/css/matery.css">
+<link rel="stylesheet" type="text/css" href="/css/my.css">
+<link rel="stylesheet" type="text/css" href="/css/dark.css" media="none" onload="if(media!='all')media='all'">
+
+
+
+
+    <link rel="stylesheet" href="/libs/tocbot/tocbot.css">
+    <link rel="stylesheet" href="/css/post.css">
+
+
+
+
+    
+
+
+
+    <script src="/libs/jquery/jquery-3.6.0.min.js"></script>
+
+<meta name="generator" content="Hexo 6.3.0"><link rel="alternate" href="/atom.xml" title="Lcn29" type="application/atom+xml">
+</head>
+
+
+<body>
+    <header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.svg" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">Lcn29</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fas fa-bars"></i></a>
+<ul class="right nav-menu">
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/" class="waves-effect waves-light">
+      
+      <i class="fas fa-home" style="zoom: 0.6;"></i>
+      
+      <span>首页</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/tags" class="waves-effect waves-light">
+      
+      <i class="fas fa-tags" style="zoom: 0.6;"></i>
+      
+      <span>标签</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/archives" class="waves-effect waves-light">
+      
+      <i class="fas fa-archive" style="zoom: 0.6;"></i>
+      
+      <span>归档</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/about" class="waves-effect waves-light">
+      
+      <i class="fas fa-user-circle" style="zoom: 0.6;"></i>
+      
+      <span>关于</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/friends" class="waves-effect waves-light">
+      
+      <i class="fas fa-address-book" style="zoom: 0.6;"></i>
+      
+      <span>友链</span>
+    </a>
+    
+  </li>
+  
+  <li>
+    <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+      <i id="searchIcon" class="fas fa-search" title="搜索" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+  <li>
+    <a href="javascript:;" class="waves-effect waves-light" onclick="switchNightMode()" title="深色/浅色模式" >
+      <i id="sum-moon-icon" class="fas fa-sun" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+</ul>
+
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.svg" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">Lcn29</div>
+        <div class="logo-desc">
+            
+            Technical System
+            
+        </div>
+    </div>
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li class="m-nav-item">
+	  
+		<a href="/" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-home"></i>
+			
+			首页
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/tags" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-tags"></i>
+			
+			标签
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/archives" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-archive"></i>
+			
+			归档
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/about" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-user-circle"></i>
+			
+			关于
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/friends" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-address-book"></i>
+			
+			友链
+		</a>
+          
+        </li>
+        
+        
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="https://github.com/lcn29" class="waves-effect waves-light" target="_blank">
+                <i class="fab fa-github-square fa-fw"></i>Fork Me
+            </a>
+        </li>
+        
+    </ul>
+</div>
+
+
+        </div>
+
+        
+            <style>
+    .nav-transparent .github-corner {
+        display: none !important;
+    }
+
+    .github-corner {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        right: 0;
+        border: 0;
+        transform: scale(1.1);
+    }
+
+    .github-corner svg {
+        color: #121317;
+        fill: #fff;
+        height: 64px;
+        width: 64px;
+    }
+
+    .github-corner:hover .octo-arm {
+        animation: a 0.56s ease-in-out;
+    }
+
+    .github-corner .octo-arm {
+        animation: none;
+    }
+
+    @keyframes a {
+        0%,
+        to {
+            transform: rotate(0);
+        }
+        20%,
+        60% {
+            transform: rotate(-25deg);
+        }
+        40%,
+        80% {
+            transform: rotate(10deg);
+        }
+    }
+</style>
+
+<a href="https://github.com/lcn29" class="github-corner tooltipped hide-on-med-and-down" target="_blank"
+   data-tooltip="Fork Me" data-position="left" data-delay="50">
+    <svg viewBox="0 0 250 250" aria-hidden="true">
+        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+        <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
+              fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+        <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
+              fill="currentColor" class="octo-body"></path>
+    </svg>
+</a>
+        
+    </nav>
+
+</header>
+
+    
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/2.jpg')">
+    <div class="container" style="right: 0px;left: 0px;">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <h1 class="description center-align post-title">Redis 命令处理过程</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<main class="post-container content">
+
+    
+    <div class="row">
+    <div id="main-content" class="col s12 m12 l9">
+        <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/Redis/">
+                                <span class="chip bg-color">Redis</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2021-11-29
+                </div>
+                
+
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-check fa-fw"></i>更新日期:&nbsp;&nbsp;
+                    2024-10-10
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
+                    7.5k
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                    28 分
+                </div>
+                
+
+                
+                    <div id="busuanzi_container_page_pv" class="info-break-policy">
+                        <i class="far fa-eye fa-fw"></i>阅读次数:&nbsp;&nbsp;
+                        <span id="busuanzi_value_page_pv"></span>
+                    </div>
+				
+            </div>
+        </div>
+        <hr class="clearfix">
+
+        
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.min.css">
+        
+
+        
+
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <p>我们知道 Redis 是一个基于内存的高性能键值数据库, 它支持多种数据结构, 提供了丰富的命令, 可以用来实现缓存、消息队列、分布式锁等功能。<br>而在享受 Redis 带来的种种好处时, 是否曾好奇过 Redis 是如何处理我们发往它的命令的呢？</p>
+<p>本文将以<strong>伪代码</strong>的形式简单分析一下 Redis 命令处理的过程, 探讨其背后的机制。</p>
+<h2 id="1-例子"><a href="#1-例子" class="headerlink" title="1 例子"></a>1 例子</h2><pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">set</span> myKey myValue
+ok</code></pre>
+<p>上面是一个简单的 Redis 命令执行过程:  </p>
+<blockquote>
+<ol>
+<li>用户借助 Redis 的<strong>客户端</strong> (redis-cli, 或者各种第三方的客户端) 向 Redis <strong>服务端</strong>发送了一个 set 命令</li>
+<li>Redis <strong>服务端</strong>将其后面的 myKey 和 myValue 存储下来</li>
+<li>Redis <strong>服务端</strong>再向客户端响应一个 ok 值, 表示处理成功。</li>
+</ol>
+</blockquote>
+<p>下面我们就以这个为例子, 来分析一下 Redis 命令处理的过程。</p>
+<p>备注:</p>
+<blockquote>
+<ol>
+<li>下面的逻辑, 是按照 <strong>Redis 5.x</strong> 的版本进行分析的, 各个大版本之间可能会有出入</li>
+<li>在伪代码分析过程中, 会将大部分无关的逻辑和异常场景进行省略</li>
+<li>因为整个过程会涉及到大量 <strong>Redis 事件轮询</strong>的知识和以 set 为例, 会涉及 <strong>Redis String 编码</strong>的知识, 可以先看一下往期这 2 篇先了解一下</li>
+</ol>
+</blockquote>
+<h2 id="2-认识一下-redisServer-和-client"><a href="#2-认识一下-redisServer-和-client" class="headerlink" title="2 认识一下 redisServer 和 client"></a>2 认识一下 redisServer 和 client</h2><p>在真正进行分析前, 有 2 个对象需要先介绍一下, 可以说他们贯穿了整个命令处理的过程。</p>
+<h3 id="2-1-redisServer"><a href="#2-1-redisServer" class="headerlink" title="2.1 redisServer"></a>2.1 redisServer</h3><p>redisServer 可以看做是整个 Redis 服务端运行时的上下文, 保存着整个 Redis 的配置和运行中产生的数据。</p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> redisServer <span class="token punctuation">&#123;</span>
+    
+    <span class="token comment">// Tcp 连接对应的文件描述符 fd 存放的数组</span>
+    <span class="token keyword">int</span><span class="token punctuation">[</span><span class="token punctuation">]</span> ipfd <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token keyword">int</span><span class="token punctuation">[</span><span class="token number">16</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 所有存入到 Redis 中的数据, 都会存放到这里</span>
+    redisDb<span class="token punctuation">[</span><span class="token punctuation">]</span> db <span class="token operator">=</span> <span class="token keyword">new</span> redisDb<span class="token punctuation">[</span><span class="token number">16</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 命令字典, 保存着 Redis 支持的所有命令</span>
+    <span class="token comment">// Redis 支持的所有命令和命令对应的执行函数, 都会存放到这里</span>
+    dict commands<span class="token punctuation">;</span>
+    
+    <span class="token comment">// 一个双向链表, 所有连接到 Redis 的客户端, 都会存放到这里</span>
+    <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span>client<span class="token punctuation">></span></span> clients<span class="token punctuation">;</span>
+    
+    <span class="token comment">// 向 Redis 发起请求的客户端, Redis 处理完成后, 如果需要响应客户端数据</span>
+    <span class="token comment">// 会将这个客户端先放到这里, 后面统一响应</span>
+    <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span>client<span class="token punctuation">></span></span> clients_pending_write<span class="token punctuation">;</span>
+    
+    <span class="token comment">// 事件循环, Redis 的核心</span>
+    aeEventLoop el<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<h4 id="2-1-1-int-ipfd"><a href="#2-1-1-int-ipfd" class="headerlink" title="2.1.1 int[] ipfd"></a>2.1.1 int[] ipfd</h4><pre class="language-config" data-language="config"><code class="language-config">bind 127.0.0.1 </code></pre>
+
+<p>上面的配置应该很熟悉吧。<br>在 Redis 的配置文件中, 加上了这个配置, 就表示 Redis 只有本地可以访问, 因为他只会监听本地机器上的的连接, 当然也可以配置具体的 Ip 地址。 </p>
+<p>在 Redis 服务端启动后, 会和<strong>bind 指定的 Ip 地址</strong> 建立对应的 Tcp 连接, 同时会获取到一个文件描述符 fd (可以理解代表当前 Tcp 连接的唯一 Id, 持有这个文件描述符, 代表了持有了对应的端口的监听能力),<br>并将连接的 fd 存放在这个 ipfd 数组中, 最大支持 16 个连接。</p>
+<h4 id="2-1-2-redisDb-db"><a href="#2-1-2-redisDb-db" class="headerlink" title="2.1.2 redisDb[] db"></a>2.1.2 redisDb[] db</h4><p>Redis 本身默认支持 16 个数据库, 只是我们正常情况都是在使用 0 号数据库。 可以通过 <strong>select [0 到 15]</strong> 进行切换。<br>而这个 redisDb[] db 是一个长度为 16 的数组, 每个元素都是一个 redisDb 对象, 代表着一个 Redis 数据库。</p>
+<p>redisDb 本身的定义很简单, 如下:  </p>
+<p><img src="https://pic.imgdb.cn/item/6562e0fdc458853aeffe9db0.png" alt="Alt &#39;redisDb 定义&#39;"></p>
+<p>其中 dict 是字典的意思, 本身就是一个 key-value 的数据结构, 可以直接看做是一个 Map (JDK 1.7 的 HashMap), 本质是一个数组, 数组中的每个元素是一个 dictEntry。<br>当发送了 <strong>set myKey myValue</strong> 到服务端, myKey, myValue 就会以键值对的形式存储在 redisDb 中的 dict 中。</p>
+<h4 id="2-1-3-dict-commands"><a href="#2-1-3-dict-commands" class="headerlink" title="2.1.3 dict commands"></a>2.1.3 dict commands</h4><p>首先它也是一个 dict, 也就是一个 Map, 一个 key-value 的映射属性, 具体的含义就是命令字典。</p>
+<p>在平时中执行的 Redis 命令, 这个命令对应的执行函数就是存放在这里, 格式如: Map&lt;命令的 key, redisCommand&gt;。<br>当发送了 <strong>set myKey myValue</strong> 到服务端, 服务端就用通过 <strong>set</strong> 这个命令 key 到这里找到对应的 setCommand, 然后执行里面的函数。</p>
+<h4 id="2-1-4-List-clients"><a href="#2-1-4-List-clients" class="headerlink" title="2.1.4 List&lt;client&gt; clients"></a>2.1.4 List&lt;client&gt; clients</h4><p>客户端双向链表。<br>Redis 本身是支持多个客户端的, Redis 接收到客户端的连接后, Redis 内部会将其封装为 client, 然后维护在这个双向链表。<br>具体的属性下面讲解。</p>
+<h4 id="2-1-5-List-clients-pending-write"><a href="#2-1-5-List-clients-pending-write" class="headerlink" title="2.1.5 List&lt;client&gt; clients_pending_write"></a>2.1.5 List&lt;client&gt; clients_pending_write</h4><p>待响应客户端双向链表。<br>服务端处理完客户端的请求后, 可能需要响应客户端结果, 也就是响应数据。<br>而 Redis 不是处理完就立即响应的, 而是先将响应结果放到客户端的<strong>输出缓存区</strong>, 然后再后面统一一起响应。<br>所以, 有数据需要响应的客户端, 会将其放到这个链表中。</p>
+<h4 id="2-1-6-aeEventLoop-el"><a href="#2-1-6-aeEventLoop-el" class="headerlink" title="2.1.6 aeEventLoop *el"></a>2.1.6 aeEventLoop *el</h4><p>事件轮询对象: 本质就是一个包装了多路复用的死循环。</p>
+<p>大体的实现如下:<br><img src="https://pic.imgdb.cn/item/6562e034c458853aeffbd257.png" alt="Alt &#39;aeEventLoop 定义&#39;"></p>
+<h3 id="2-2-client"><a href="#2-2-client" class="headerlink" title="2.2 client"></a>2.2 client</h3><p>client 是理解 Redis 命令处理过程的另一个重要对象, 他代表着一个客户端连接。<br>Redis 客户端连接到服务端时, 服务端将这个客户端的封装成这个对象。</p>
+<p>client 本身的属性如下:</p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> client <span class="token punctuation">&#123;</span>
+    
+    <span class="token comment">// 同 redisServer 的 ipfd</span>
+    <span class="token comment">// 当 Redis 接收到客户端的连接后, 会获取到一个代表这个客户端 Tcp 连接的文件描述符 fd, 然后存放到这个属性中</span>
+    <span class="token keyword">int</span> fd<span class="token punctuation">;</span>
+    
+    <span class="token comment">// 当前客户端的是否已经经过了密码认证, 0 代表未认证, 1 代表已认证</span>
+    <span class="token keyword">int</span> authenticated<span class="token punctuation">;</span>
+
+    <span class="token comment">// 输入缓存区, 客户端发送过来的数据会先存放在这里</span>
+    sds querybuf<span class="token punctuation">;</span>
+    
+    <span class="token comment">// 命令参数的个数, 一个客户端发送过来的命令, 会被 Redis 拆分成多个参数</span>
+    <span class="token comment">// 比如 set myKey myValue, 总共 3 个参数</span>
+    <span class="token keyword">int</span> argc<span class="token punctuation">;</span>
+    
+    <span class="token comment">// 命令参数, 一个客户端发送过来的命令, 会被 Redis 拆分成多个参数</span>
+    <span class="token comment">// 比如 set myKey myValue, 就会被拆分成 3 个参数, 3 个参数会存放在这个数组中</span>
+    robj<span class="token punctuation">[</span><span class="token punctuation">]</span> argv<span class="token punctuation">;</span>
+    
+    <span class="token comment">// 一个数组, 固定输出缓冲区, 用来存放响应客户端的数据</span>
+    <span class="token keyword">char</span><span class="token punctuation">[</span><span class="token punctuation">]</span> buf <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token keyword">char</span><span class="token punctuation">[</span><span class="token number">16</span> <span class="token operator">*</span> <span class="token number">1024</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 一个链表, 动态输出缓冲区, 同样是用来存放响应客户端的数据</span>
+    <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span>clientReplyBlock<span class="token punctuation">></span></span> reply<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>下面介绍一下几个重要的属性。</p>
+<h4 id="2-2-1-sds-querybuf"><a href="#2-2-1-sds-querybuf" class="headerlink" title="2.2.1 sds querybuf"></a>2.2.1 sds querybuf</h4><p>输入缓冲区。<br>客户端发送到服务端的数据, Redis 服务端收到了, 会先存放到这里。实现结构是一个 sds。 大体的定义如下:<br><img src="https://pic.imgdb.cn/item/6562e2b5c458853aef04f939.png" alt="Alt &#39;sds 定义&#39;"></p>
+<h4 id="2-2-2-robj-argv"><a href="#2-2-2-robj-argv" class="headerlink" title="2.2.2 robj[] argv"></a>2.2.2 robj[] argv</h4><p>querybuf 中的数据进行解析后的数据存放的地方, 具体的属性是一个 redisObject 的数组。<br>而一个 sds 类型 redisObject 的结构如下:<br><img src="https://pic.imgdb.cn/item/6562e2b6c458853aef04ff46.png" alt="Alt ‘sds 类型的 redisObject&#39;"></p>
+<h4 id="2-2-3-char-buf"><a href="#2-2-3-char-buf" class="headerlink" title="2.2.3 char[] buf"></a>2.2.3 char[] buf</h4><p>一个可以存放 16 * 1024 个字符的数组。 客户端发送的命令, Redis 服务端处理完成后, 需要进行响应, 而响应的内容会先存放到这里。<br>因为是一个长度固定的数组, 所以叫做<strong>固定输出缓冲区</strong>, 最多可以存放 16kb 的响应数据。</p>
+<h4 id="2-2-4-List-reply"><a href="#2-2-4-List-reply" class="headerlink" title="2.2.4 List&lt;clientReplyBlock&gt; reply"></a>2.2.4 List&lt;clientReplyBlock&gt; reply</h4><p><strong>动态输出缓冲区</strong>。<br>当 Redis 服务端响应客户端数据大于上面的 char[] buf 的容量时, 就先放到这里 (双向链表理论上没有大小限制)。</p>
+<p>本质是一个 clientReplyBlock 的双向链表。<br>clientReplyBlock 的定义也很简单。如下, 可以简单的看做是一个 char[] 的封装。<br><img src="https://pic.imgdb.cn/item/6562e2b2c458853aef04effc.png" alt="Alt &#39;clientReplyBlock 定义&#39;"></p>
+<p>可以看出来, Redis 的响应缓存区是由一个固定大小的 <strong>char 数组</strong>加一个动态变化的 <strong>char 数组链表</strong>共同构成的。<br>这么组织的好处是: 16kb 的固定 buffer, 基本满足大部分的情况的使用, 提前声明好可以避免频繁分配、回收内存。<br>动态的响应链表则是起到一个兜底的作用, 保证大数据量时的响应。而本身在需要时进行再分配内存, 使用后释放, 可以起到节省内存的作用。</p>
+<p>到此, Redis 命令处理过程中的 2 个重要对象: redisServer 和 client 就介绍完了, 只需要大体知道 2 个对象里面有哪些属性, 大体是干什么的即可,<br>怎么实现等都可以不用深入, 在开始前先介绍这 2 个对象, 只是是为了后面的分析更加清晰。</p>
+<h2 id="3-Redis-服务端启动流程"><a href="#3-Redis-服务端启动流程" class="headerlink" title="3 Redis 服务端启动流程"></a>3 Redis 服务端启动流程</h2><pre class="language-bash" data-language="bash"><code class="language-bash">./redis-server ./redis.conf <span class="token parameter variable">--port</span> <span class="token number">6666</span> <span class="token parameter variable">--dbfilename</span> dump.rdb</code></pre>
+
+<p>在服务器上可以通过上面的命令启动一个 Redis 服务端。<br>启动脚本 redis-server 后面紧跟的是 Redis 的配置文件, 再后面是用户想要指定的参数 (这里将端口修改为 6666)。</p>
+<p>整个启动的过程如下:<br><img src="https://pic.imgdb.cn/item/6562e472c458853aef0b6a5f.png" alt="Alt &#39;Redis 服务端启动流程&#39;"></p>
+<blockquote>
+<ol>
+<li>通过脚本启动 Redis 服务端</li>
+<li>创建一个 redisServer 对象, 这时 redisServer 里面所有的配置都是默认值, 比如监听的端口, 连接超时等</li>
+<li>读取配置文件和命令行参数并覆盖掉 redisServer 里面的默认配置, 比如这里的端口, 默认为 6379, 通过命令行参数覆盖为 6666, 在这个过程, 还会将 server.c 里面写好的命令和命令对应的函数从一个静态数组中加载到 redisServer 的 commands 字典中</li>
+<li>将 redisServer 里面的事件轮询 aeEventLoop 创建出来</li>
+<li>和配置文件里面的 <strong>bind 地址 + 启动端口</strong>建立起 Tcp 连接, 可以得到对应连接的文件描述 fd, 可以理解为一个 Id</li>
+<li>为每一个文件描述符, 也就是 Tcp 连接, 在事件轮询中注册一个<strong>可读的文件事件</strong>, 执行函数为 <strong>acceptTcpHandler</strong> (可以理解为告诉多路复用, 关心对应的 Tcp 连接的连接事件, 触发了执行 acceptTcpHandler 函数)</li>
+<li>从磁盘中将 Redis 上次运行的数据加载到 redisServer 的 16 个 redisDb 中 (如果有的话)</li>
+<li>设置事件轮询的阻塞前和阻塞后执行的函数</li>
+<li>启动事件轮询, 进入一个死循环, 整个 Redis 服务端启动成功</li>
+</ol>
+</blockquote>
+<p>大体的伪代码逻辑如下: </p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// server.c </span>
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span> <span class="token operator">*</span><span class="token operator">*</span>argv<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    
+    <span class="token comment">// 1. redisServer 各个属性进行默认值设置</span>
+    <span class="token function">initServerConfig</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 2. 解析命令行参数</span>
+    <span class="token comment">// 启动脚本的参数会通过 main 方法的 argv 传递进来， 这里会对这些参数进行解析处理</span>
+    <span class="token function">parsingCommandLineArguments</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 3. 根据配置文件和命令行参数的配置覆盖掉 redisServer 的默认值</span>
+    <span class="token comment">// 内部会执行一个函数 populateCommandTable(), 将 Reids 所以支持的命令和对应的函数放到 redisServer.commands 中</span>
+    <span class="token function">loadServerConfig</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token comment">// 4. 初始化服务端</span>
+    <span class="token comment">// 4.1 创建事件轮询对象</span>
+    <span class="token comment">// 4.2 对所有绑定的 Ip 对应的 6666 端口(默认为 6379, 上面启动命令修改为了 6666) 开启 TCP 监听, 并得到对应的 Ip 文件描述符 fd, 存放到 redisServer 的 ipfd 中</span>
+    <span class="token comment">// 4.3 对 Redis 的 16 个数据库进行初始化</span>
+    <span class="token comment">// 4.4 向事件轮询注册 1 个时间事件: 100 毫秒执行一次, 执行函数 serverCron</span>
+    <span class="token comment">// 4.5 对每个 ipfd 向事件轮询注册 1 个可读的文件事件: 执行函数 acceptTcpHandler</span>
+    <span class="token comment">// 其他无法的省略</span>
+    <span class="token function">initServer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 5. 从磁盘中加载数据到 redisServer 的 redisDB 中 (AOF, RDB)</span>
+    <span class="token function">loadDataFromDisk</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 6. 向事件轮询注册 阻塞前调用函数 beforeSleep</span>
+    <span class="token function">aeSetBeforeSleepProc</span><span class="token punctuation">(</span>server<span class="token punctuation">.</span>el<span class="token punctuation">,</span>beforeSleep<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 7. 向事件轮询注册 阻塞后调用函数 afterSleep</span>
+    <span class="token function">aeSetAfterSleepProc</span><span class="token punctuation">(</span>server<span class="token punctuation">.</span>el<span class="token punctuation">,</span>afterSleep<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 8. 启动事件轮询, 这时进入了死循环, 整个服务端启动</span>
+    <span class="token function">aeMain</span><span class="token punctuation">(</span>server<span class="token punctuation">.</span>el<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 9. 从事件轮询中退出来，表示程序需要退出了, 删除事件轮询</span>
+    <span class="token function">aeDeleteEventLoop</span><span class="token punctuation">(</span>server<span class="token punctuation">.</span>el<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>启动后的 redisServer 的状态如下:<br><img src="https://pic.imgdb.cn/item/6562e87cc458853aef1ab4b2.png" alt="Alt &#39;Redis 服务端启动后 redisServer 的状态&#39;"></p>
+<h2 id="4-Redis-客户端连接服务端"><a href="#4-Redis-客户端连接服务端" class="headerlink" title="4 Redis 客户端连接服务端"></a>4 Redis 客户端连接服务端</h2><p>Redis 服务端端启动后, 整个 Redis 就进入到事件轮询里面的死循环, 一直在执行下面的逻辑</p>
+<p><img src="https://pic.imgdb.cn/item/6562e690c458853aef1391f4.png" alt="Alt &#39;Redis 服务端启动后事件轮询中执行的死循环逻辑&#39;"></p>
+<p>这时有个客户端通过 <strong>Ip + 端口</strong>连接到 Redis 服务端, 多路复用观察到有上游关心的可读事件, 会保留下这个连接请求事件。<br>这时 redisServer 的事件轮询执行到了 <strong>从多路复用中获取事件</strong>, 获取到了客户端的连接事件, 接着触发了 acceptTcpHandler 函数。</p>
+<p><img src="https://pic.imgdb.cn/item/6562e694c458853aef13a01d.png" alt="Alt &#39;Redis 服务端接收到客户端的连接&#39;"></p>
+<p>触发的 acceptTcpHandler 函数的逻辑如下: </p>
+<p><img src="https://pic.imgdb.cn/item/6562e9c3c458853aef1f6a84.png" alt="Alt &#39;Redis acceptTcpHandler 函数逻辑&#39;"> </p>
+<blockquote>
+<ol>
+<li>将连接到  Redis 服务端的客户端封装为 client, 代表当前的客户端</li>
+<li>将封装后的 client, 放到 redisServer 的客户端双写链表 List&lt;client&gt; clients 中</li>
+<li>向事件轮询为这个客户端注册一个<strong>可读的文件事件</strong>, 触发执行的函数为 readQueryFromClient</li>
+</ol>
+</blockquote>
+<p>大体的伪代码逻辑如下: </p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token comment">// networking.c</span>
+<span class="token keyword">void</span> <span class="token function">acceptTcpHandler</span><span class="token punctuation">(</span>aeEventLoop <span class="token operator">*</span>el<span class="token punctuation">,</span> <span class="token keyword">int</span> fd<span class="token punctuation">,</span> <span class="token keyword">void</span> <span class="token operator">*</span>privdata<span class="token punctuation">,</span> <span class="token keyword">int</span> mask<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+
+    <span class="token comment">// 1. 获取客户端 Tcp 连接对应的文件描述符</span>
+    <span class="token keyword">int</span> cfd <span class="token operator">=</span> <span class="token function">anetTcpAccept</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 2. 创建 client </span>
+    <span class="token function">createClient</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 3. 向事件轮询注册一个当前客户端的可读的文件事件, 执行函数为: readQueryFromClient</span>
+    <span class="token function">registerClientFdReadFilesEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 4. 初始化 client 的属性, 比如选中的数据库默认为第一个, 输入和输出缓存区创建</span>
+    <span class="token function">initClient</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 5. 将 client 添加到 redisServer 的 client 双向链表中</span>
+    <span class="token function">linkClient</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 6. 最大客户端数量检查, 如果超过了, 就关闭这个连接 (默认为 10000) </span>
+    <span class="token function">maxClientNumCheck</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 7. 保护模式检查, 默认开启 (protected-mode yes)</span>
+    <span class="token comment">// 开启保护模式时, 没有配置 bind Ip 和密码, 同时客户端的 Ip 地址不是 127.0.0.1 或 ::1, 就关闭这个连接</span>
+    <span class="token function">protectedModeCheck</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>接受了客户端的连接后的 redisServer 的状态如下:<br><img src="https://pic.imgdb.cn/item/6562ea80c458853aef221ddf.png" alt="Alt &#39;Redis 接收到客户端的连接后 redisServer 的状态&#39;"></p>
+<h2 id="5-客户端发送命令到服务端"><a href="#5-客户端发送命令到服务端" class="headerlink" title="5 客户端发送命令到服务端"></a>5 客户端发送命令到服务端</h2><p>Redis 的客户端和服务端之间的数据的传输, 都是遵循内部自定义的一套协议: <strong>RESP</strong>。</p>
+<h3 id="5-1-RESP-协议"><a href="#5-1-RESP-协议" class="headerlink" title="5.1 RESP 协议"></a>5.1 RESP 协议</h3><p>当用户在客户端输入对应的请求命令时, 比如 <strong>set myKey myValue</strong>, 客户端会将这个命令转换为 RESP 协议的格式, 然后发送到服务端。</p>
+<p>RESP 介绍的具体介绍, 可以看一下这篇<a target="_blank" rel="noopener" href="https://blog.csdn.net/ldw201510803006/article/details/126093440">文章</a></p>
+<p>所有的内容通过 <strong>\r\n</strong> 进行分割, 然后定义了几个标识符, 如下:<br><code>+</code> 标识后面是一个简单的字符串<br><code>$</code> 表示后面的内容是一个二进制安全的字符串, 后面会紧跟着一个数字, 表示字符串的长度<br><code>*</code> 表示后面的内容是一个数组, 后面同样紧跟一个数字, 表示数组的长度<br>…… 后面省略  </p>
+<p>比如:<br><strong>set myKey myValue</strong>   </p>
+<ol>
+<li>三个字符串 (set + myKey + myValue), 那么转换后就是 3 个二进制安全的字符串, 所以开头就是 <code>*3</code></li>
+<li>跟后面的内容用 \r\n 分隔, 所以就是 <code>*3\r\n</code></li>
+<li>第一个字符串是 set, 长度 3, 所以就是 <code>*3\r\n$3\r\nset\r\n</code>  </li>
+<li>后面的 myKey 和 myValue 类似, 最终转换后的内容如下 <code>*3\r\n$3\r\nset\r\n$5\r\nmyKey\r\n$7\r\nmyValue\r\n</code></li>
+</ol>
+<h3 id="5-2-请求类型"><a href="#5-2-请求类型" class="headerlink" title="5.2 请求类型"></a>5.2 请求类型</h3><p>在 Redis 解析客户端的请求内容前, 还需要确定当前的请求的方式, 判断的逻辑如下: </p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// 请求内容以 * 开头, 那么请求类型为 mult bulk 请求, 否则是 inline 请求</span>
+<span class="token keyword">if</span> <span class="token punctuation">(</span>c<span class="token operator">-></span>querybuf<span class="token punctuation">[</span>c<span class="token operator">-></span>qb_pos<span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token char">'*'</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    c<span class="token operator">-></span>reqtype <span class="token operator">=</span> PROTO_REQ_MULTIBULK<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+    c<span class="token operator">-></span>reqtype <span class="token operator">=</span> PROTO_REQ_INLINE<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>可以看到  Redis 支持 2 种请求的类型 <strong>mult bulk 请求</strong>, 还是 <strong>inline 请求</strong>。<br>2 者的区别也很简单, 以请求内容的开头是否为 * 开头进行区分。<br>以 * 开头的内容, 可以看出就是遵循 REST 协议的请求, 而其他的请求就是 inline 请求。</p>
+<p>之所以有 inline 请求, 其实是为了兼容一下特殊的客户端, 比如 Linux 的 telnet 等。</p>
+<p>在 Linux 可以通过 <strong>telnet Ip 端口</strong> 连接到服务端, 然后直接发送请求到服务端, 而这些请求是直接发送到服务端的, 没有中间转为 RESP 协议的。<br>所以 Redis 选择了兼容这些特殊的情况, 并将这些请求称为 inline 请求。</p>
+<p>所以客户端发送命令到服务端的过程如下<br><img src="https://pic.imgdb.cn/item/6562ead1c458853aef233f55.png" alt="Alt &#39;Redis 客户端按照 RESP 协议转换发送请求&#39;"></p>
+<blockquote>
+<ol>
+<li>Redis 客户端接收用户的输入请求</li>
+<li>将这些请求按照 RESP 协议进行转换 (inline 请求, 不会有这一步)</li>
+<li>将转换后的请求内容发送给 Redis 服务端</li>
+</ol>
+</blockquote>
+<h2 id="6-服务端接收到客户端发送的命令"><a href="#6-服务端接收到客户端发送的命令" class="headerlink" title="6 服务端接收到客户端发送的命令"></a>6 服务端接收到客户端发送的命令</h2><p>在上面客户端连接时, 向事件轮询中为当前的客户端注册了一个<strong>可读的文件事件</strong>, 触发函数为 <strong>readQueryFromClient</strong>。<br>而在客户端将请求发送到服务端后, 事件轮询从多路复用中获取到了这个<strong>文件事件</strong>后, 会执行里面的函数 readQueryFromClient 函数。</p>
+<p>整个 redisQueryFromClient 可以拆分为 2 部分</p>
+<blockquote>
+<ol>
+<li>请求参数处理</li>
+<li>具体请求命令的执行</li>
+</ol>
+</blockquote>
+<h3 id="6-1-请求参数处理"><a href="#6-1-请求参数处理" class="headerlink" title="6.1 请求参数处理"></a>6.1 请求参数处理</h3><p>在上面我们知道, 客户端向服务端发送了一段 RESP 格式的请求 *<strong>3\r\n$3\r\nset\r\n$5\r\nmyKey\r\n$7\r\nmyValue\r\n</strong>, 服务端会</p>
+<blockquote>
+<ol>
+<li>将客户端发送过来的请求 <code>*3\r\n$3\r\nset\r\n$5\r\nmyKey\r\n$7\r\nmyValue\r\n</code>, 原封不动的存储到对应 client 的<strong>输入缓冲区</strong> queryBuf<br><img src="https://pic.imgdb.cn/item/6562ebe7c458853aef2735fd.png" alt="Alt &#39;Redis redaQueryFromCLient - 存储请求&#39;"></li>
+<li>存储在 client querybuf 的内容 <code>*3\r\n$3\r\nset\r\n$5\r\nmyKey\r\n$7\r\nmyValue\r\n</code>, 按照 RESP 协议解析为 3 个 embstr 编码的 redisObject (String 的三种编码有讲解), 然后存储到 client 的 argv 数组中。<br><img src="https://pic.imgdb.cn/item/6562ebf0c458853aef27575d.png" alt="Alt &#39;Redis redaQueryFromCLient - 命令解析&#39;"></li>
+<li>根据 client 的参数数组 argv 的第一个参数 (第一个参数一定是命令参数) 到 redisServer 的命令字典 commands 查找当前的命令<br><img src="https://pic.imgdb.cn/item/6562ebf8c458853aef277504.png" alt="Alt &#39;Redis redaQueryFromCLient  执行命令查询&#39;"></li>
+<li>找到命令后, 当然是执行对应的命令里面的函数了</li>
+</ol>
+</blockquote>
+<p>上面是 redisQueryFromClient 第一部分, 忽略<strong>请求命令的逻辑</strong>后的简化过程, 想要继续深入了解里面的其他判断可以看一下下面的伪代码</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// networking.c</span>
+<span class="token keyword">void</span> <span class="token function">readQueryFromClient</span><span class="token punctuation">(</span>aeEventLoop <span class="token operator">*</span>el<span class="token punctuation">,</span> <span class="token keyword">int</span> fd<span class="token punctuation">,</span> <span class="token keyword">void</span> <span class="token operator">*</span>privdata<span class="token punctuation">,</span> <span class="token keyword">int</span> mask<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+    <span class="token comment">// 1. 先将客户端的请求数据读取到 client 的 querybuf 中</span>
+    <span class="token function">putRequestContentIntoClientQueryBuffer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 2. 如果 querybuf 中的数据超过了 1GB, 就关闭这个连接</span>
+    <span class="token function">checkClientQueryBufferMoreThanOneGb</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 3. 临时暂停这次请求, 等待后面触发, 对应的状态有</span>
+    <span class="token comment">// 3.1 当前的 client 的为阻塞状态 (如果 querybuf 中的数据超过了 256MB, 就将这个 client 的状态设置为 REDIS_BLOCKED)</span>
+    <span class="token comment">// 3.2 当前有一个 lua 脚本在执行中</span>
+    <span class="token comment">// 3.3 当前的客户端是准备关闭状态</span>
+    <span class="token comment">// 3.4 客户端被暂停了</span>
+    <span class="token function">temporaryPaurseThisRequest</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 4. 根据请求参数的第一个字符是否为 *, 确定当前的请求是 mult bulk 请求还是 inline 请求</span>
+    <span class="token function">confirmThisRequestType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 5. 根据请求类型, 对 querybuf 的参数进行解析, 然后存放到 argv </span>
+    <span class="token function">parseRequestContentIntoClientArgvByRequestType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 6. 命令处理</span>
+    <span class="token function">processCommand</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment">// server.c</span>
+<span class="token keyword">int</span> <span class="token function">processCommand</span><span class="token punctuation">(</span>client <span class="token operator">*</span>c<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+    <span class="token comment">// 1. 模块过滤器, 前置处理</span>
+    <span class="token comment">// https://redis.io/resources/modules/</span>
+    <span class="token function">moduleCallCommandFilters</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 2. argv[0] 为 quit (断开连接)</span>
+    <span class="token comment">// 将客户端的标识设置为 client_close_after_reply, 等待后面的处理, 然后返回</span>
+    <span class="token function">ifQuitCommandHandle</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 3. 根据 argv[0], 也就是 key, 从 redisServer 的 commands 中找到对应的 redisCommand, 也就是执行命令</span>
+    c<span class="token operator">-></span>cmd <span class="token operator">=</span> c<span class="token operator">-></span>lastcmd <span class="token operator">=</span> <span class="token function">lookupCommand</span><span class="token punctuation">(</span>c<span class="token operator">-></span>argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span>ptr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 4. 命令 null 检查和命令需要的参数格个数和实际参数个数检查, 不符合就返回错误</span>
+    <span class="token function">commandNullAndArgumentsNumberCheck</span><span class="token punctuation">(</span>c<span class="token operator">-></span>cmd， c<span class="token operator">-></span>argc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 5. 服务端需要密码认证, 同时当前的客户端未认证, 并且执行的命令不是 auth 命令, 返回错误</span>
+    <span class="token function">requirePassCheckWhenCmdNotAuth</span><span class="token punctuation">(</span>c<span class="token operator">-></span>authenticated<span class="token punctuation">,</span> c<span class="token operator">-></span>cmd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 6. 开启了集群模式, 根据 key 计算出对应的执行服务端节点, 如果当前的服务端不是执行的服务端节点, 通知客户端重定向</span>
+    <span class="token function">redirectClientIfNeedByKeyWhenClusterEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 7. 如果设置了最大内存同时当前没有正在执行的 lua 脚本, 就尝试释放内存</span>
+    <span class="token function">tryToReleaseMemoryWhenSetMaxMemoryAndNoLuaScriptTimeout</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 8. 当前是主节点, 磁盘检测失败, 执行的命令具备变更属性(新增, 修改, 删除等)或者是 ping 命令,  返回错误</span>
+    <span class="token comment">// 磁盘检测失败的场景</span>
+    <span class="token comment">// 8.1 开启了 RDB, 上一次 RDB 失败了,  同时配置了 RDB 失败停止写操作 (stop_writes_on_bgsave_error yes)</span>
+    <span class="token comment">// 8.2 开启了 AOF, 上一次 AOF 失败了</span>
+    <span class="token function">pingAndWriteCommandsDeniedByDiskErrorByMaster</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 9. 主从复制配置检查</span>
+    <span class="token comment">// 配置了 repl_min_slaves_to_write 和 repl_min_slaves_max_lag</span>
+    <span class="token comment">// 当前需要有多少个心跳正常的从节点存活, 否则变更属性的命令不执行, 返回错误</span>
+    <span class="token function">writeCommandsDeniedByMinSlavesNumberReply</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 10. 当前的客户端是从节点, 并且配置了 slave_read_only, 并且执行的命令具备变更属性, 返回错误</span>
+    <span class="token function">writeCommandDeniedBySlaveReadOnly</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 11. 当前的客户端是一个订阅客户端 (subscribe), 执行的命令不是 subscribe, unsubscribe, psubscribe, punsubscribe, ping, 返回错误</span>
+    <span class="token function">subscribeClientCanHandleCommandCheck</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 12. 从节点和主节点失去了联系或者正在执行复制中, 同时 slave-serve-stale-data 设置为了 no, 执行的命令不是 stale 属性(info, slaveof), 返回错误</span>
+    <span class="token function">slaveSynchronizingOrConnectStateUnusualCheck</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 13. 服务端正在从磁盘中加载数据, 执行的命令不是 loading 属性(info, subscribe, unsubscribe, psubscribe, punsubscribe, publish) , 返回错误</span>
+    <span class="token function">loadingFromDiskCheck</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 14. 当前正在执行 lua 脚本, 执行的命令不是 auth, replconf, shutdown, script, 返回错误</span>
+    <span class="token function">luaScribtBusyCheck</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 15. 开启了事务, 执行的命令不是 exec, discard, multi, watch, 返回错误</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">openTranscation</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token function">commandIsNotExecAndDiscardAndMultiAndWatch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 15.1 命令入队列</span>
+        <span class="token function">queueMultiCommand</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> C_OK<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">// 17. 将要执行的命令, 发送给监控器</span>
+    <span class="token comment">// Redis 客户端可以成为服务端的监控器, 服务端执行的命令会同步传输给客户端</span>
+    <span class="token function">sendCommandToMonitors</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 18. 对应 key 的命令函数执行, 后面会以 setCommand 为例进行分析</span>
+    c<span class="token operator">-></span>cmd<span class="token operator">-></span><span class="token function">proc</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 19. 如果需要，进行统计记录</span>
+    <span class="token function">latencyAddSampleIfNeeded</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 20. 如果需要, 慢日志记录</span>
+    <span class="token function">slowlogPushEntryIfNeeded</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 21. 命令传播, 如果有必要进行命令替换</span>
+    <span class="token comment">// aof 和 主从复制需要当前执行的命令进行数据处理</span>
+    <span class="token comment">// 一些随机性的命令, 不能直接就传播出去, 需要根据当前的执行结果进行替换, 比如 SPOP key [count], 从 set 中随机弹出若干个元素</span>
+    <span class="token function">propagateCommand</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<h3 id="6-2-具体请求命令的执行"><a href="#6-2-具体请求命令的执行" class="headerlink" title="6.2 具体请求命令的执行"></a>6.2 具体请求命令的执行</h3><p>在 redisQueryFromClient 的逻辑中, 有一段代码</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">processCommand</span><span class="token punctuation">(</span>client <span class="token operator">*</span>c<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+    <span class="token comment">// 这一步就是具体的命令执行的地方, 以 set 命令为例, 了解一下 set 命令的执行过程</span>
+    c<span class="token operator">-></span>cmd<span class="token operator">-></span><span class="token function">proc</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>就是具体的请求命令的执行时机, 这里以 setCommand 为了, 这次直接看伪代码先</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// t_string.c</span>
+<span class="token keyword">void</span> <span class="token function">setCommand</span><span class="token punctuation">(</span>client <span class="token operator">*</span>c<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 上面的 c->cmd->proc(c), 最终执行到的函数就是这个</span>
+
+    <span class="token comment">// SET key value [NX] [XX] [EX &lt;seconds>] [PX &lt;milliseconds>] </span>
+
+    <span class="token comment">// 1. 根据参数计算超时时间</span>
+    robj <span class="token operator">*</span>expire <span class="token operator">=</span> <span class="token function">calExpireTime</span><span class="token punctuation">(</span>c<span class="token operator">-></span>argv<span class="token punctuation">,</span> c<span class="token operator">-></span>argc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 2. 尝试对 value 进行字符串的编码优化</span>
+
+    <span class="token comment">// 2.1 编码不是 embstr 和 raw, 就直接返回原数据, 不是字符串类型, 没必要优化</span>
+
+    <span class="token comment">// 2.2 value 长度小于 20, 同时可以转为整数</span>
+    <span class="token comment">// 2.2.1 没有配置最大内存, 同时内存回收策略不是 MAXMEMORY_FLAG_NO_SHARED_INTEGERS (涉及 lru/lfu 这 2 种模式的回收策略), </span>
+    <span class="token comment">// 转换的数字大于等于 0, 小于 10000, 返回共享整数池中返回这个数字, 都不满足, 新建一个整数</span>
+    <span class="token comment">// 2.2.2 原本的 reidsObject 的编码为 raw, 将入参的 redisObject 转为 int 编码, *ptr 修改为转换后的整数值</span>
+    <span class="token comment">// 2.2.3 原本的 reidsObject 的编码为 embstr, 重新创建一个新的 int 编码的 redisObject</span>
+    <span class="token comment">// 2.2 逻辑结束 下面为 2.2 不满足情况</span>
+
+    <span class="token comment">// 2.3 入参的 redisObject 内容长度小于等于 44, 重新创建一个 embstr 的字符串, 将入参的 redisObject 转为 embstr 编码,  *ptr 修改为转换后的整数值</span>
+    <span class="token comment">// 2.3 逻辑结束 下面为 2.3 不满足情况</span>
+    
+    <span class="token comment">// 2.4 到了这里, 说明客户端传过来的 value 大于 44, 只能用 raw 编码, 但是 raw 编码还可以 尝试进行 trim 优化, 也就是去空格</span>
+    c<span class="token operator">-></span>argv<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">tryObjectEncoding</span><span class="token punctuation">(</span>c<span class="token operator">-></span>argv<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 3. 将 key 和 value 存放到 当前客户端选择的 redisDb[] db 中</span>
+    <span class="token function">putTheKeyAndValueToDb</span><span class="token punctuation">(</span>c<span class="token operator">-></span>db<span class="token punctuation">,</span> c<span class="token operator">-></span>argv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> c<span class="token operator">-></span>argv<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 4. 如果设置了参数时间, 将更新 redisObject 的 expireTime</span>
+    <span class="token function">setExpireTimeIfNeed</span><span class="token punctuation">(</span>c<span class="token operator">-></span>db<span class="token punctuation">,</span> c<span class="token operator">-></span>argv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> expire<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 5. 如果需要, 将当前的客户端放到 redisServer 的 pending_write_clients 中, 表明当前的客户端有数据需要响应</span>
+    <span class="token function">putCurrentClientToClientsPendingWriteIfNeed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 6. 将响应内容 +OK\r\n (响应结果也遵循 RESP 协议) 写入到客户端的 buf 中, 无法写入就写入到客户端的 reply</span>
+    <span class="token function">tryWriteResponseToBufOrReply</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 7. 当写入的内容是写入到 reply 中时, 需要检查当前客户端待响应的内容的大小是否超过了限制, 是的话, 关闭当前客户端</span>
+    <span class="token function">checkClientOutputBufferLimitsWhenWriteToReply</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>逻辑概括如下:</p>
+<blockquote>
+<ol>
+<li>根据参数计算超时时间, Redis 的 set 命令支持很多种参数格式, 需要根据这些参数计算出一个当前 String 的过期时间 (如果有设置的话)</li>
+<li>参数数组 argv[2], 一定是要存入到 Redis 的 value, 当前的 value 虽然已经是 redisObject 了, 但如果它是 embstr 和 raw, 尝试寻找更合适的编码 (这一部分都是 Redis String 编码的内容)<br><img src="https://pic.imgdb.cn/item/6562ecbcc458853aef2a32dc.png" alt="Alt &#39;Redis setCommand  重编码尝试过程&#39;"></li>
+<li>将处理好的 myKey 和 myValue 存到 redisServer 的 redisDb 数组中的第一个 (如果使用前, 通过 select 修改了使用的数据库, 那么存在对应的数据库, 默认为 0, 第一个)<br><img src="https://pic.imgdb.cn/item/6562ecc4c458853aef2a4d31.png" alt="Alt &#39;Redis setCommand  保存对象过程&#39;"></li>
+<li>如果有必要, 对 redisObject 的过期时间的进行更新</li>
+<li>数据处理完了, 当前的命令如果有数据需要响应客户端时, 需要将当前客户端放到 redisServer 的待响应客户端双向链表 clients_pending_write 中, set 命令处理完需要响应一个 ok, 所以当前 client 需要加入这个链表<br><img src="https://pic.imgdb.cn/item/6562eccdc458853aef2a6beb.png" alt="Alt &#39;Redis setCommand  客户端加入待响应客户端双向链表&#39;"></li>
+<li>如果有数据需要响应, 将响应的数据放到 client 的固定输出缓冲区 <strong>char buf[]</strong> 中, 如果无法直接存放进去, 则存放到动态输出缓冲区 <strong>List<clientReplyBlock> reply</strong> 中, set 回应的是 ok, 经过 RESP 协议后假设可以直接放到固定输出缓冲区<br><img src="https://pic.imgdb.cn/item/6562ecd6c458853aef2a8bdb.png" alt="Alt &#39;Redis setCommand  响应结果写入缓冲区&#39;"></li>
+</ol>
+</blockquote>
+<p>服务端接收到客户端发送的命令并处理后, redisServer 的状态如下:<br><img src="https://pic.imgdb.cn/item/6562efb8c458853aef3512b4.png" alt="Alt &#39;Redis 服务端接收到客户端发送的命令后 redisServer 状态&#39;"></p>
+<p>此时 client 的状态如下:<br><img src="https://pic.imgdb.cn/item/6562f46ac458853aef458b27.png" alt="Alt &#39;Redis 服务端接收到客户端发送的命令后 client 状态&#39;"></p>
+<h2 id="7-服务端响应客户端"><a href="#7-服务端响应客户端" class="headerlink" title="7 服务端响应客户端"></a>7 服务端响应客户端</h2><p>存放在 client 的输出缓冲区的数据, 是什么时候发送给客户端的呢?<br>在 Redis 里面是经过 2 个步骤实现的</p>
+<blockquote>
+<ol>
+<li>为每一个待发送的客户端注册一个可写的文件事件, 执行函数为 sendReplyToClient</li>
+<li>事件轮询获取这个可写事件并触发 sendReplyToClient 函数</li>
+</ol>
+</blockquote>
+<h3 id="7-1-为待发送的客户端注册发送数据的文件事件"><a href="#7-1-为待发送的客户端注册发送数据的文件事件" class="headerlink" title="7.1 为待发送的客户端注册发送数据的文件事件"></a>7.1 为待发送的客户端注册发送数据的文件事件</h3><p>Redis 服务端端启动后, 整个 Redis 就进入到事件轮询里面的死循环, 一直在执行下面的逻辑</p>
+<p>!<img src="https://pic.imgdb.cn/item/6562e690c458853aef1391f4.png" alt="Alt &#39;Redis 服务端启动后事件轮询中执行的死循环逻辑&#39;"></p>
+<p>而这次在<strong>阻塞前 beforesleep 函数执行</strong> 时, 在 beforesleep 函数中会:<br>遍历 redisServer 的待响应客户端双向链表 clients_pending_write 中的所有客户端, </p>
+<blockquote>
+<ol>
+<li>将对应的客户端从双向链表删除</li>
+<li>删除的客户端如果有数据要发送, 为他在多路复用各注册一个可写的文件事件, 触发函数 sendReplyToClient</li>
+</ol>
+</blockquote>
+<p><img src="https://pic.imgdb.cn/item/6562f2d4c458853aef400eda.png" alt="Alt &#39;Redis 服务端注册发送数据文件事件&#39;"></p>
+<p>对应的地方为 beforeSleep 函数逻辑如下:</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// server.c</span>
+<span class="token keyword">void</span> <span class="token function">beforeSleep</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">aeEventLoop</span> <span class="token operator">*</span>eventLoop<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+    <span class="token comment">// 处理带有输出缓冲区的客户端</span>
+    <span class="token function">handleClientsWithPendingWrites</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">int</span> <span class="token function">handleClientsWithPendingWrites</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+    client <span class="token operator">*</span>c
+
+    <span class="token comment">// 1. 遍历 redisServer 的 clients_pending_write </span>
+    <span class="token keyword">while</span><span class="token punctuation">(</span>c <span class="token operator">=</span> <span class="token function">getNextNodeFromLinkList</span><span class="token punctuation">(</span>server<span class="token punctuation">.</span>clients_pending_write<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+        <span class="token comment">// 将当前的 client 从 clients_pending_write 链表中删除</span>
+        <span class="token function">removeTheClientFromeClientsPendingWrite</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 当前的客户端有数据需要发送 (client->buf 或 client->reply 不为空),</span>
+        <span class="token comment">// 向多路复用注册一个可写的文件事件, 执行函数为 sendReplyToClient</span>
+        <span class="token function">registFileEventForClientWhenClientHaveDataToWrite</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<h3 id="7-2-触发发送数据的文件事件"><a href="#7-2-触发发送数据的文件事件" class="headerlink" title="7.2 触发发送数据的文件事件"></a>7.2 触发发送数据的文件事件</h3><p>事件轮询在执行完阻塞前函数后, 又进入到多路复用中获取文件事件, 这时会获取到刚刚注册的可写事件文件, 触发 sendReplyToClient 的逻辑, 过程如下:</p>
+<p><img src="https://pic.imgdb.cn/item/6562f2dbc458853aef4026ca.png" alt="Alt &#39;Redis 服务端响应客户端过程&#39;"></p>
+<blockquote>
+<ol>
+<li>逐步将 client 的缓冲区推送给客户端 (单次推送数据有上限要求, 超过的需要到下次事件轮询再推送)</li>
+<li>client 推送数据完成, 将其对应的文件事件从多路复用中删除 (如果还有数据没推送, 事件不会被删除, 下次事件轮询还能触发, 推送剩下的)</li>
+</ol>
+</blockquote>
+<p>具体的逻辑如下:</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// networking.c</span>
+<span class="token keyword">void</span> <span class="token function">sendReplyToClient</span><span class="token punctuation">(</span>aeEventLoop <span class="token operator">*</span>el<span class="token punctuation">,</span> <span class="token keyword">int</span> fd<span class="token punctuation">,</span> <span class="token keyword">void</span> <span class="token operator">*</span>privdata<span class="token punctuation">,</span> <span class="token keyword">int</span> mask<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">//  client 的输出缓冲区有数据需要发送</span>
+    <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token function">clientHasPendingReplies</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+        <span class="token comment">// client 的 buf 有数据需要发送</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">clientBufHasDataToSend</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">writeDataToClient</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// 如果 client 的 reply 有数据, 获取链表的第一个节点, 将里面的数据发送给客户端, 同时从双写链表中删除这个节点</span>
+            <span class="token function">writeDataToClientIfClientReplyHasData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token comment">// 当前已经发送的数据达到了单次发送的上线 1024*64</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">currentHaveSendMoreThanMaxLimit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+            <span class="token comment">// 没有设置最大内存, 当前发送数据停止</span>
+            <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token function">noSetMaxMemory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+
+            <span class="token comment">// 设置了最大内存, 当前已经使用的内存大小小于最大内存, 当前发送数据停止</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">haveSetMaxMemoryAndCurrentUsedMemoryLessThanMaxMemory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token comment">// 设置了最大内存了, 当前使用的内存大于等于最大内存了, 继续循环, 尽量多发送一些, 释放内存</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">// 当前 client 没有数据需要发送了</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">clientHasPendingReplies</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 从事件轮询中删除当前的发送数据事件</span>
+        <span class="token function">delCurrentFileEventFromEventLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// client 还有数据, 那么不删除事件, 继续保留, 下次事件轮询执行, 继续执行</span></code></pre>
+
+<p>需要留意的是执行一个 sendReplyToClient 函数, 给这个客户端推送数据</p>
+<blockquote>
+<ol>
+<li>每次个客户端推送数据最大为 1024 * 64, 超过了会停止这次推送, 将剩下的留到下次再继续推送 (伪代码里面表明了一些特殊情况了)</li>
+</ol>
+</blockquote>
+<p>至此</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">set</span> myKey myValue
+ok</code></pre>
+<p>一个完整的流程就结束了。</p>
+
+                
+            </div>
+            <hr/>
+        </div>
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+            <div class="card">
+                <a href="/article/2021/2629732721/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/13.jpg" class="responsive-img" alt="Redis RDB">
+                        
+                        <span class="card-title">Redis RDB</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="far fa-clock fa-fw icon-date"></i>2021-12-01
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Redis/">
+                        <span class="chip bg-color">Redis</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/article/2021/3671033365/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/23.jpg" class="responsive-img" alt="Redis SkipList 编码">
+                        
+                        <span class="card-title">Redis SkipList 编码</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-11-29
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Redis/">
+                        <span class="chip bg-color">Redis</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+
+</div>
+
+
+
+<!-- 代码块功能依赖 -->
+<script type="text/javascript" src="/libs/codeBlock/codeBlockFuction.js"></script>
+
+
+  <!-- 是否加载使用自带的 prismjs. -->
+  <script type="text/javascript" src="/libs/prism/prism.min.js"></script>
+
+
+<!-- 代码语言 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeLang.js"></script>
+
+
+<!-- 代码块复制 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeCopy.js"></script>
+
+
+<!-- 代码块收缩 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeShrink.js"></script>
+
+
+
+    </div>
+    <div id="toc-aside" class="expanded col l3 hide-on-med-and-down">
+        <div class="toc-widget card" style="background-color: white;">
+            <div class="toc-title"><i class="far fa-list-alt"></i>&nbsp;&nbsp;目录</div>
+            <div id="toc-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOC 悬浮按钮. -->
+
+<div id="floating-toc-btn" class="hide-on-med-and-down">
+    <a class="btn-floating btn-large bg-color">
+        <i class="fas fa-list-ul"></i>
+    </a>
+</div>
+
+
+<script src="/libs/tocbot/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '#articleContent',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            collapseDepth: Number('0'),
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+
+        
+        /* 修复文章卡片 div 的宽度. */
+        let fixPostCardWidth = function (srcId, targetId) {
+            let srcDiv = $('#' + srcId);
+            if (srcDiv.length === 0) {
+                return;
+            }
+
+            let w = srcDiv.width();
+            if (w >= 450) {
+                w = w + 21;
+            } else if (w >= 350 && w < 450) {
+                w = w + 18;
+            } else if (w >= 300 && w < 350) {
+                w = w + 16;
+            } else {
+                w = w + 14;
+            }
+            $('#' + targetId).width(w);
+        };
+
+        // 切换TOC目录展开收缩的相关操作.
+        const expandedClass = 'expanded';
+        let $tocAside = $('#toc-aside');
+        let $mainContent = $('#main-content');
+        $('#floating-toc-btn .btn-floating').click(function () {
+            if ($tocAside.hasClass(expandedClass)) {
+                $tocAside.removeClass(expandedClass).hide();
+                $mainContent.removeClass('l9');
+            } else {
+                $tocAside.addClass(expandedClass).show();
+                $mainContent.addClass('l9');
+            }
+            fixPostCardWidth('artDetail', 'prenext-posts');
+        });
+        
+    });
+</script>
+
+    
+
+</main>
+
+
+
+
+    <footer class="page-footer bg-color">
+    
+
+    <div class="container row center-align"
+         style="margin-bottom: 0px !important;">
+        <div class="copy-right">
+            Copyright&nbsp;&copy;
+            
+                <span id="year">2019-2024</span>
+            
+            <br/>
+
+            Powered by&nbsp;<a href="https://hexo.io/" target="_blank">Hexo</a>
+            &nbsp; | &nbsp;&nbsp;Theme <a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">Matery</a>
+
+            
+            <br>
+            
+            
+                <span id="busuanzi_container_site_pv">
+                    总访问量:&nbsp;<span id="busuanzi_value_site_pv" class="white-color"></span>
+                </span>
+            
+            
+                <span id="busuanzi_container_site_uv">
+                    &nbsp; | &nbsp;&nbsp;总访问人数:&nbsp; <span id="busuanzi_value_site_uv" class="white-color"></span>
+                </span>
+            
+            <br>
+
+            <!-- 运行天数提醒. -->
+            
+            <br>
+            
+        </div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+    <!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fas fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字"
+                   class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+$(function () {
+    var searchFunc = function (path, search_id, content_id) {
+        'use strict';
+        $.ajax({
+            url: path,
+            dataType: "xml",
+            success: function (xmlResponse) {
+                // get the contents from search data
+                var datas = $("entry", xmlResponse).map(function () {
+                    return {
+                        title: $("title", this).text(),
+                        content: $("content", this).text(),
+                        url: $("url", this).text()
+                    };
+                }).get();
+                var $input = document.getElementById(search_id);
+                var $resultContent = document.getElementById(content_id);
+                $input.addEventListener('input', function () {
+                    var str = '<ul class=\"search-result-list\">';
+                    var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                    $resultContent.innerHTML = "";
+                    if (this.value.trim().length <= 0) {
+                        return;
+                    }
+                    // perform local searching
+                    datas.forEach(function (data) {
+                        var isMatch = true;
+                        var data_title = data.title.trim().toLowerCase();
+                        var data_content = data.content.trim().replace(/<[^>]+>/g, "").toLowerCase();
+                        var data_url = data.url;
+                        data_url = data_url.indexOf('/') === 0 ? data.url : '/' + data_url;
+                        var index_title = -1;
+                        var index_content = -1;
+                        var first_occur = -1;
+                        // only match artiles with not empty titles and contents
+                        if (data_title !== '' && data_content !== '') {
+                            keywords.forEach(function (keyword, i) {
+                                index_title = data_title.indexOf(keyword);
+                                index_content = data_content.indexOf(keyword);
+                                if (index_title < 0 && index_content < 0) {
+                                    isMatch = false;
+                                } else {
+                                    if (index_content < 0) {
+                                        index_content = 0;
+                                    }
+                                    if (i === 0) {
+                                        first_occur = index_content;
+                                    }
+                                }
+                            });
+                        }
+                        // show search results
+                        if (isMatch) {
+                            str += "<li><a href='" + data_url + "' class='search-result-title'>" + data_title + "</a>";
+                            var content = data.content.trim().replace(/<[^>]+>/g, "");
+                            if (first_occur >= 0) {
+                                // cut out 100 characters
+                                var start = first_occur - 20;
+                                var end = first_occur + 80;
+                                if (start < 0) {
+                                    start = 0;
+                                }
+                                if (start === 0) {
+                                    end = 100;
+                                }
+                                if (end > content.length) {
+                                    end = content.length;
+                                }
+                                var match_content = content.substr(start, end);
+                                // highlight all keywords
+                                keywords.forEach(function (keyword) {
+                                    var regS = new RegExp(keyword, "gi");
+                                    match_content = match_content.replace(regS, "<em class=\"search-keyword\">" + keyword + "</em>");
+                                });
+
+                                str += "<p class=\"search-result\">" + match_content + "...</p>"
+                            }
+                            str += "</li>";
+                        }
+                    });
+                    str += "</ul>";
+                    $resultContent.innerHTML = str;
+                });
+            }
+        });
+    };
+
+    searchFunc('/search.xml', 'searchInput', 'searchResult');
+});
+</script>
+
+    <!-- 白天和黑夜主题 -->
+<div class="stars-con">
+    <div id="stars"></div>
+    <div id="stars2"></div>
+    <div id="stars3"></div>  
+</div>
+
+<script>
+    function switchNightMode() {
+        $('<div class="Cuteen_DarkSky"><div class="Cuteen_DarkPlanet"></div></div>').appendTo($('body')),
+        setTimeout(function () {
+            $('body').hasClass('DarkMode') 
+            ? ($('body').removeClass('DarkMode'), localStorage.setItem('isDark', '0'), $('#sum-moon-icon').removeClass("fa-sun").addClass('fa-moon')) 
+            : ($('body').addClass('DarkMode'), localStorage.setItem('isDark', '1'), $('#sum-moon-icon').addClass("fa-sun").removeClass('fa-moon')),
+            
+            setTimeout(function () {
+            $('.Cuteen_DarkSky').fadeOut(1e3, function () {
+                $(this).remove()
+            })
+            }, 2e3)
+        })
+    }
+</script>
+
+    <!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+</div>
+
+
+    <script src="/libs/materialize/materialize.min.js"></script>
+    <script src="/libs/masonry/masonry.pkgd.min.js"></script>
+    <script src="/libs/aos/aos.js"></script>
+    <script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+    <script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+    <script src="/js/matery.js"></script>
+
+    
+
+    
+    
+    
+
+    <!-- 雪花特效 -->
+    
+
+    <!-- 鼠标星星特效 -->
+    
+
+     
+        <script src="https://ssl.captcha.qq.com/TCaptcha.js"></script>
+        <script src="/libs/others/TencentCaptcha.js"></script>
+        <button id="TencentCaptcha" data-appid="xxxxxxxxxx" data-cbfn="callback" type="button" hidden></button>
+    
+
+    <!-- Baidu Analytics -->
+
+    <!-- Baidu Push -->
+
+<script>
+    (function () {
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        } else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+
+    
+    
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+    
+
+    
+
+    
+
+    <!--腾讯兔小巢-->
+    
+    
+
+    
+
+    
+
+    
+    <script src="/libs/instantpage/instantpage.js" type="module"></script>
+    
+
+</body>
+
+</html>

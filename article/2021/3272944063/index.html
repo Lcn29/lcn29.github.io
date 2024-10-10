@@ -1,0 +1,1334 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="Redis 事件轮询, Lcn29">
+    <meta name="description" content="1 Redis 为什么快
+
+数据存在内存中, 直接操作内存中的数据
+单线程处理业务请求避免了多线的上下文切换, 锁竞争等弊端
+使用 IO 多路复用支撑更高的网络请求
+使用事件驱动模型, 通过事件通知模式, 减少不必要的等待
+…
+
+
+这些都是">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+    <title>Redis 事件轮询 | Lcn29</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+
+
+    <!-- bg-cover style     -->
+
+
+
+<link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+<link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+<link rel="stylesheet" type="text/css" href="/css/matery.css">
+<link rel="stylesheet" type="text/css" href="/css/my.css">
+<link rel="stylesheet" type="text/css" href="/css/dark.css" media="none" onload="if(media!='all')media='all'">
+
+
+
+
+    <link rel="stylesheet" href="/libs/tocbot/tocbot.css">
+    <link rel="stylesheet" href="/css/post.css">
+
+
+
+
+    
+
+
+
+    <script src="/libs/jquery/jquery-3.6.0.min.js"></script>
+
+<meta name="generator" content="Hexo 6.3.0"><link rel="alternate" href="/atom.xml" title="Lcn29" type="application/atom+xml">
+</head>
+
+
+<body>
+    <header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.svg" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">Lcn29</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fas fa-bars"></i></a>
+<ul class="right nav-menu">
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/" class="waves-effect waves-light">
+      
+      <i class="fas fa-home" style="zoom: 0.6;"></i>
+      
+      <span>首页</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/tags" class="waves-effect waves-light">
+      
+      <i class="fas fa-tags" style="zoom: 0.6;"></i>
+      
+      <span>标签</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/archives" class="waves-effect waves-light">
+      
+      <i class="fas fa-archive" style="zoom: 0.6;"></i>
+      
+      <span>归档</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/about" class="waves-effect waves-light">
+      
+      <i class="fas fa-user-circle" style="zoom: 0.6;"></i>
+      
+      <span>关于</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/friends" class="waves-effect waves-light">
+      
+      <i class="fas fa-address-book" style="zoom: 0.6;"></i>
+      
+      <span>友链</span>
+    </a>
+    
+  </li>
+  
+  <li>
+    <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+      <i id="searchIcon" class="fas fa-search" title="搜索" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+  <li>
+    <a href="javascript:;" class="waves-effect waves-light" onclick="switchNightMode()" title="深色/浅色模式" >
+      <i id="sum-moon-icon" class="fas fa-sun" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+</ul>
+
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.svg" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">Lcn29</div>
+        <div class="logo-desc">
+            
+            Technical System
+            
+        </div>
+    </div>
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li class="m-nav-item">
+	  
+		<a href="/" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-home"></i>
+			
+			首页
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/tags" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-tags"></i>
+			
+			标签
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/archives" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-archive"></i>
+			
+			归档
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/about" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-user-circle"></i>
+			
+			关于
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/friends" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-address-book"></i>
+			
+			友链
+		</a>
+          
+        </li>
+        
+        
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="https://github.com/lcn29" class="waves-effect waves-light" target="_blank">
+                <i class="fab fa-github-square fa-fw"></i>Fork Me
+            </a>
+        </li>
+        
+    </ul>
+</div>
+
+
+        </div>
+
+        
+            <style>
+    .nav-transparent .github-corner {
+        display: none !important;
+    }
+
+    .github-corner {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        right: 0;
+        border: 0;
+        transform: scale(1.1);
+    }
+
+    .github-corner svg {
+        color: #121317;
+        fill: #fff;
+        height: 64px;
+        width: 64px;
+    }
+
+    .github-corner:hover .octo-arm {
+        animation: a 0.56s ease-in-out;
+    }
+
+    .github-corner .octo-arm {
+        animation: none;
+    }
+
+    @keyframes a {
+        0%,
+        to {
+            transform: rotate(0);
+        }
+        20%,
+        60% {
+            transform: rotate(-25deg);
+        }
+        40%,
+        80% {
+            transform: rotate(10deg);
+        }
+    }
+</style>
+
+<a href="https://github.com/lcn29" class="github-corner tooltipped hide-on-med-and-down" target="_blank"
+   data-tooltip="Fork Me" data-position="left" data-delay="50">
+    <svg viewBox="0 0 250 250" aria-hidden="true">
+        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+        <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
+              fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+        <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
+              fill="currentColor" class="octo-body"></path>
+    </svg>
+</a>
+        
+    </nav>
+
+</header>
+
+    
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/20.jpg')">
+    <div class="container" style="right: 0px;left: 0px;">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <h1 class="description center-align post-title">Redis 事件轮询</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<main class="post-container content">
+
+    
+    <div class="row">
+    <div id="main-content" class="col s12 m12 l9">
+        <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/Redis/">
+                                <span class="chip bg-color">Redis</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2021-11-24
+                </div>
+                
+
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-check fa-fw"></i>更新日期:&nbsp;&nbsp;
+                    2024-10-10
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
+                    5.8k
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                    21 分
+                </div>
+                
+
+                
+                    <div id="busuanzi_container_page_pv" class="info-break-policy">
+                        <i class="far fa-eye fa-fw"></i>阅读次数:&nbsp;&nbsp;
+                        <span id="busuanzi_value_page_pv"></span>
+                    </div>
+				
+            </div>
+        </div>
+        <hr class="clearfix">
+
+        
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.min.css">
+        
+
+        
+
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <h2 id="1-Redis-为什么快"><a href="#1-Redis-为什么快" class="headerlink" title="1 Redis 为什么快"></a>1 Redis 为什么快</h2><blockquote>
+<ol>
+<li>数据存在内存中, 直接操作内存中的数据</li>
+<li>单线程处理业务请求避免了多线的上下文切换, 锁竞争等弊端</li>
+<li>使用 IO 多路复用支撑更高的网络请求</li>
+<li>使用事件驱动模型, 通过事件通知模式, 减少不必要的等待</li>
+<li>…</li>
+</ol>
+</blockquote>
+<p>这些都是 Redis 快的原因。 但是这些到了代码层面是如何实现的呢?</p>
+<p>这篇文章会简单的梳理 Redis 的代码实现 – 事件轮询。<br>主要涉及到上面的单线程, IO 多路复用和事件驱动。</p>
+<p>注: 下面的分析也是按照 <strong>Redis 5.x</strong> 进行分析。</p>
+<h2 id="2-IO-多路复用"><a href="#2-IO-多路复用" class="headerlink" title="2 IO 多路复用"></a>2 IO 多路复用</h2><p>因为 Redis 中大量的使用到了 IO 多路复用, 这边我们先简单的了解一下 IO 多路复用。</p>
+<p><img src="https://pic.imgdb.cn/item/655f6b00c458853aef997860.png" alt="Alt &#39;IO 多路复用的简单原理&#39;"></p>
+<p>上面的 IO 多路复用的简单流程, 还有另外一种<strong>回调</strong>的实现方式, 大体的逻辑差不多。</p>
+<p>而传统的阻塞式 IO 的大体流程如下:</p>
+<p><img src="https://pic.imgdb.cn/item/655f6af4c458853aef993e54.png" alt="Alt &#39;传统的阻塞式 IO 的简单原理&#39;"></p>
+<p>线程一直阻塞在监听端口处, 其间无法进行任何的事务的处理, 没有连接进来, 线程就一直就阻塞着。 同时自己无法兼顾处理多个并发的请求。</p>
+<p>而 IO 多路复用, 则将监听的操作交由系统进行处理, 自己在处理事务的过程中, 不定时的过来询问有自己关心的事件吗, 有就执行相应的事务, 否则继续处理别的业务。</p>
+<h2 id="3-IO-多路复用在各个系统的实现"><a href="#3-IO-多路复用在各个系统的实现" class="headerlink" title="3 IO 多路复用在各个系统的实现"></a>3 IO 多路复用在各个系统的实现</h2><p>从上面的流程可以知道, IO 多路复用需要系统层面的支撑, 就如存在多种操作系统一样, IO 多路复用的具体实现也有多种</p>
+<blockquote>
+<ol>
+<li>select 大部分系统都支持</li>
+<li>epoll Linux</li>
+<li>evport Solaris</li>
+<li>kqueue UNIX (Mac)</li>
+<li>…</li>
+</ol>
+</blockquote>
+<p>不同的实现, 理所当然的映射到程序中, 就是不同的 api, 也就是不同的函数。<br>以 epoll 为例, 在 C 语言中, 提供了 3 个函数来帮助开发者使用多路复用。</p>
+<p><img src="https://pic.imgdb.cn/item/655f6b0fc458853aef99c3d4.png" alt="Alt &#39;epoll 多路复用 Api&#39;"></p>
+<p>Linux 提供的 epoll 多路复用就上面是 3 个方法, 很简单。<br>但是到了 Mac 的 evport 具体实现, 对应的实现是 kevent, meset 等函数, 完全不一样的逻辑。</p>
+<p>不同的多路复用实现有着不同的 Api, 而 Redis 是一个可以支撑多平台的中间件, 那么就不能简单的选择其中一种了, 那么怎么办呢?  </p>
+<p><img src="https://pic.imgdb.cn/item/655f6d29c458853aefa53c90.gif" alt="Alt &#39;全都要表情包&#39;"></p>
+<h2 id="4-Redis-对多路复用的统一"><a href="#4-Redis-对多路复用的统一" class="headerlink" title="4 Redis 对多路复用的统一"></a>4 Redis 对多路复用的统一</h2><p>全都要是有代价的, 首当其冲的就是编码上复杂性将会提高很多。最简单的写法应该就是如下: </p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token comment">/**
+ * 创建多路复用
+ */</span>
+<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">createIoMultiplex</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    
+    <span class="token keyword">if</span><span class="token punctuation">(</span>os_system<span class="token operator">==</span><span class="token string">"Linux"</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token comment">// TODO</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span><span class="token punctuation">(</span>os_system<span class="token operator">==</span><span class="token char">'mac'</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token comment">// TODO</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>首先上面的代码逻辑是没错的, 但是从一个开发出发</p>
+<blockquote>
+<ol>
+<li>增加了自己的编码量</li>
+<li>对知识储备有挑战, 需要了解不同的多路复用的实现原理</li>
+<li>…</li>
+</ol>
+</blockquote>
+<p>作为开发人员想要的是一套统一的 Api, 就能操作所有的多路复用。我不需要知道各个的多路复用的 Api, 差异什么, 什么时候用哪个。  </p>
+<p><strong>下面就进入 Redis Java 版代码环节了 (Redis 是基于 C 语言实现的, 而 C 是一门面向过程的语言, 下面会以 Java 语言的形式进行分析总体逻辑是类似的)。</strong></p>
+<p>虽然多路复用的实现在不同的方式有很多种, 但是对于开发通过多路复用要实现的事情都是一样的</p>
+<blockquote>
+<ol>
+<li>创建和销毁多路复用</li>
+<li>向多路复用添加删除我们关心的事件</li>
+<li>从多路复用中获取我们关心的事件, 然后进行处理</li>
+</ol>
+</blockquote>
+<p>所以 Redis 中对多路复用进行了封装。<br>先说一下结论吧: Redis 中对多路复用的封装有 2 层 <strong>AeApiState</strong> + <strong>AeApi</strong>。</p>
+<p>AeApiState: 对各种多路复用<strong>本身实现逻辑</strong>的封装, 屏蔽各种实现细节。<br>可以理解为 AeApiState 就是代表了多路复用, AeApiState &#x3D;&#x3D; 多路复用, 就像我们一直说多路复用有多种实现一样 AeApiState 下面也有多种实现, EpollAeApiState, SelectAeApiState 等。</p>
+<p><img src="https://pic.imgdb.cn/item/655f6aecc458853aef99170d.png" alt="Alt &#39;AeApiState 对多路复用实现逻辑的封装&#39;"></p>
+<p>AeApi: 对多路复用<strong>支持的行为</strong>的封装, 对底层的多路复用进行了屏蔽, 开发人员只需要持有它的实现就可以对多路复用进行操作。</p>
+<p><img src="https://pic.imgdb.cn/item/655f6ae7c458853aef98fe9d.png" alt="Alt &#39;AeApi 对多路复用支持的行为的封装&#39;"></p>
+<h3 id="4-1-AeApiState"><a href="#4-1-AeApiState" class="headerlink" title="4.1 AeApiState"></a>4.1 AeApiState</h3><p>首先需要对各个系统的多路复用的统一: </p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AeApiState</span> <span class="token punctuation">&#123;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>AeApiState 是 Redis 中各个操作系统重多路复用的统一声明。就和我们一直说多路复用一样, 是一个统称, 落实到实际中, 会有不同的实现, epoll, select 等。<br>AeApiState 也一样是 Redis 多路复用的一个统称, 其本身空空如也, 不具备任何的多路复用的功能。<br>而各个系统中已经给我们准备好了现成的功能, 我们完全可以利用起。</p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">EpollAeApiState</span> <span class="token keyword">extends</span> <span class="token class-name">AeApiState</span> <span class="token punctuation">&#123;</span>
+
+    <span class="token comment">/**
+     * 监听的文件描述符, 可以简单理解为一个文件的 id
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> epFd<span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * Epoll 会将调用方关心并符合条件的事件存放到这里
+     * EpollEvent 就 2 个属性  
+     * int fd 对应的文件描述符, 这里一般就是客户端的标识, 简单理解就是某个事件的 id
+     * int events 触发的事件类型, 可以理解为可读可写等
+     */</span>
+    <span class="token keyword">private</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">EpollEvent</span><span class="token punctuation">></span></span> events<span class="token punctuation">;</span>
+    
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">epollCreate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+		<span class="token comment">// 调用系统提供的 epoll_create() 创建 Epoll 类型的</span>
+	<span class="token punctuation">&#125;</span>
+	
+	<span class="token comment">// 省略其他 2 个方法</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>将各个系统的多路复用技术全部封装起来, 统一为 AeApiState 了。</p>
+<h3 id="4-2-AeApi"><a href="#4-2-AeApi" class="headerlink" title="4.2 AeApi"></a>4.2 AeApi</h3><p>现在有多路复用 AeApiState 了, 但是不同的多路复用的 Api 不同, 同样的行为可以有不同的实现, 还是没解决多种实现的问题, 统一的 Api, 底层的屏蔽呢?<br>这是就轮到 AeApi 出现了, 对常用的多路复用 Api 行为进行抽象</p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">AeApi</span> <span class="token punctuation">&#123;</span>
+
+    <span class="token comment">/**
+     * 获取 aeApi 的名称, 也就是多路复用的实现名称
+     * @return aeApi 的名称
+     */</span>
+    <span class="token class-name">String</span> <span class="token function">aeApiName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * 创建 AeApiState, 也就是创建具体的多路复用
+     * @param setSize 关心的事件最大数量
+     * @return 创建结果, 1：成功, 其他失败
+     */</span>
+    <span class="token keyword">int</span> <span class="token function">aeApiCreate</span><span class="token punctuation">(</span><span class="token keyword">int</span> setSize<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * 重新设置 AeApiState 中监听文件描述符的上限
+     * @param setSize     重新设置的大小
+     * @return 释放结果, 1：成功, 其他失败
+     */</span>
+    <span class="token keyword">int</span> <span class="token function">aeApiResize</span><span class="token punctuation">(</span><span class="token keyword">int</span> setSize<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * 释放 AeApiState, 也就是关闭具体的多路复用
+     */</span>
+    <span class="token keyword">void</span> <span class="token function">aeApiFree</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * 向多路复用中新增关心事件
+     * @param aeEventLoop 事件轮询对象
+     * @param fd          文件描述符
+     * @param mask        标识
+     * @return 新增结果, 1：成功, 其他失败
+     */</span>
+    <span class="token keyword">int</span> <span class="token function">aeApiAddEvent</span><span class="token punctuation">(</span><span class="token class-name">AeEventLoop</span> aeEventLoop<span class="token punctuation">,</span> <span class="token keyword">int</span> fd<span class="token punctuation">,</span> <span class="token keyword">int</span> mask<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * 向多路复用中删除事件
+     * @param aeEventLoop 事件轮询对象
+     * @param fd          文件描述符
+     * @param delMask     删除标识
+     * @return 删除结果, 1：成功, 其他失败
+     */</span>
+    <span class="token keyword">int</span> <span class="token function">aeApiDelEvent</span><span class="token punctuation">(</span><span class="token class-name">AeEventLoop</span> aeEventLoop<span class="token punctuation">,</span> <span class="token keyword">int</span> fd<span class="token punctuation">,</span> <span class="token keyword">int</span> delMask<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * 阻塞指定毫秒数, 返回阻塞时间段内就绪的事件
+     * @param aeEventLoop 事件轮询对象
+     * @param waitTime    阻塞时间, 毫秒
+     * @return 准备就绪的事件条数
+     */</span>
+    <span class="token keyword">int</span> <span class="token function">aeApiPoll</span><span class="token punctuation">(</span><span class="token class-name">AeEventLoop</span> aeEventLoop<span class="token punctuation">,</span> <span class="token keyword">long</span> waitTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>上面是对 Redis 中对使用多路复用的支持的行为的定义。 不同的多路复用实现, 实现上面的接口, 实现自己的行为。  </p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">EpollAeApi</span> <span class="token keyword">implements</span> <span class="token class-name">AeApi</span> <span class="token punctuation">&#123;</span>
+
+    <span class="token comment">/** Epoll 多路复用自身的封装 */</span>
+    <span class="token keyword">private</span> <span class="token class-name">AeApiState</span> aeApiState<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token class-name">String</span> <span class="token function">aeApiName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token string">"epoll"</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">aeApiCreate</span><span class="token punctuation">(</span><span class="token keyword">int</span> setSize<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 将 epoll 封装到自定义的 AeApiState 中</span>
+        <span class="token class-name">EpollAeApiState</span> epollAeApiState <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">EpollAeApiState</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        epollAeApiState<span class="token punctuation">.</span><span class="token function">epollCreate</span><span class="token punctuation">(</span>setSize<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>aeApiState <span class="token operator">=</span> epollAeApiState<span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+ 	<span class="token comment">// 其他方法省略</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>到此, Redis 对多路复用的封装就达成了。</p>
+<p>上面都是底层的封装实现, 而到了开发层面, 在使用时, 就很简单了, 完全屏蔽了多路复用的存在, 基于统一的 Api 就能操作自己想要的效果</p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token class-name">AeApi</span> aeApi <span class="token operator">=</span> <span class="token function">geteApi</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 创建多路复用</span>
+aeApi<span class="token punctuation">.</span><span class="token function">aeApiCreate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 添加事件</span>
+aeApi<span class="token punctuation">.</span><span class="token function">aeApiAddEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 取消关心的事件</span>
+aeApi<span class="token punctuation">.</span><span class="token function">aeApiDelEvent</span><span class="token punctuation">(</span>fd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 阻塞 waitTime 毫秒, 等待多路复用返回关心的事情</span>
+aeApi<span class="token punctuation">.</span><span class="token function">aeApiPoll</span><span class="token punctuation">(</span>waitTime<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<h2 id="5-事件驱动"><a href="#5-事件驱动" class="headerlink" title="5 事件驱动"></a>5 事件驱动</h2><p>多路复用只是 Redis 运行中的一个辅助功能, 需要和 Redis 的事件轮询共同配合, 才支持起了高并发。<br>事件轮询可以拆分成事件 + 轮询。  </p>
+<h3 id="5-1-轮询"><a href="#5-1-轮询" class="headerlink" title="5.1 轮询"></a>5.1 轮询</h3><p>这里我们先说一下轮询。轮询: 实际上就是一个死循环。  </p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">while</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token comment">// TODO 执行逻辑</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<blockquote>
+<ol>
+<li>将这个死循环封装到一个对象 AeEventLoop 中去, 同时加上一个控制循环结束的变量，就达到了 Redis 中事件轮询中轮询的雏形了。</li>
+</ol>
+</blockquote>
+<p><img src="https://pic.imgdb.cn/item/655f6aedc458853aef991cfb.png" alt="Alt &#39;事件轮询的雏形&#39;"></p>
+<blockquote>
+<ol start="2">
+<li>丰富轮询的功能 –&gt; 将我们的多路复用的 AeApi 添加进去，此时的事件轮询，将会变成这样</li>
+</ol>
+</blockquote>
+<p><img src="https://pic.imgdb.cn/item/655f6b0ac458853aef99abb3.png" alt="Alt &#39;带多路复用的事件轮询雏形&#39;"></p>
+<blockquote>
+<ol start="3">
+<li>丰富轮询的功能 –&gt; 在循环中调用多路复用时, 添加阻塞前后的回调函数</li>
+</ol>
+</blockquote>
+<p><img src="https://pic.imgdb.cn/item/655f6afac458853aef995ebc.png" alt="Alt &#39;带阻塞前后的回调函数的事件轮询雏形&#39;"></p>
+<p>很多人认为 Redis 整个单线程是完成不会阻塞的。<br>实际上, 还是存在阻塞情况, 如果你有查看上面的 AeApi 的 Api 就可以发现 aeApiPoll 是一个阻塞的方法, 只是 Redis 阻塞时间设置的比较巧妙, 后面再分析。</p>
+<p>上面就是我们常说的事件驱动模型, 事件轮询的轮询主体了。在使用上, 也很简单</p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Application</span> <span class="token punctuation">&#123;</span>
+    
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        
+        <span class="token comment">// 创建事件轮询对象</span>
+	 	<span class="token class-name">AeEventLoop</span> aeEventLoop <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AeEventLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Redis 启动"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		
+        <span class="token comment">// 启动事件轮询 (进入了一个死循环)        </span>
+        aeEventLoop<span class="token punctuation">.</span><span class="token function">aeMain</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Redis 停止"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> 
+<span class="token punctuation">&#125;</span></code></pre>
+
+<h3 id="5-2-事件"><a href="#5-2-事件" class="headerlink" title="5.2 事件"></a>5.2 事件</h3><p>有了循环了, 但是从整体看的话, 循环中是没有任何的执行逻辑的, 是因为 Redis 将所有的逻辑都封装到了每一个事件上, 事件是将 Redis 中多路复用和轮询组合起来的核心。</p>
+<p>在 Redis 中定义了 2 种事件</p>
+<p><strong>文件事件</strong>: 需要满足某个条件才触发的事件, 但是不确定触发时机<br><img src="https://pic.imgdb.cn/item/655f6ae4c458853aef98ee93.png" alt="Alt &#39;AeFileEvent 的定义&#39;"></p>
+<p><strong>时间事件</strong>: 需要多次有间隔的执行事件<br><img src="https://pic.imgdb.cn/item/655f6b0cc458853aef99b3c7.png" alt="Alt &#39;AeTimeEvent 的定义&#39;"></p>
+<h3 id="5-2-1-时间事件"><a href="#5-2-1-时间事件" class="headerlink" title="5.2.1 时间事件"></a>5.2.1 时间事件</h3><p>因为文件事件和多路复用挂钩, 有点绕了一点, 我们先将时间事件组合到事件轮询中。</p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AeEventLoop</span> <span class="token punctuation">&#123;</span>
+
+    <span class="token comment">// 程序自定义的时间事件, 双写链表</span>
+    <span class="token keyword">private</span> <span class="token class-name">AeTimeEvent</span> aeTimeEvent<span class="token punctuation">;</span>
+
+    <span class="token comment">// 对外暴露的函数: 向事件轮询中的时间事件链表添加新的时间事件</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">aeCreateTimeEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 向事件轮询添加时间事件, 就是简单的链表操作</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">// 对外暴露的函数: 通过事件的 id 从事件轮询中的时间事件链表删除对应的时间事件</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">aeDeleteTimeEvent</span><span class="token punctuation">(</span><span class="token keyword">long</span> id<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 从事件轮询删除时间事件, , 就是简单的链表操作</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">// 启动函数没有任何变化</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">aeMain</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>stop <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">aeProcessEvents</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">// 事件处理函数</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> <span class="token function">aeProcessEvents</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+        <span class="token comment">// 1. 从时间链表中获取最快需要触发的时间事件, 距离触发还需要多少毫秒</span>
+        <span class="token comment">// 这里就是为什么 Redis 阻塞时间设置的比较巧妙的地方, 阻塞的这段时间理论是无时间触发, 所以对性能影响比较小</span>
+        <span class="token keyword">long</span> waitTime <span class="token operator">=</span> <span class="token function">handlerWaitTime</span><span class="token punctuation">(</span>aeTimeEvent<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 2. 执行阻塞前的函数 beforeSleepFunction(this);</span>
+
+        <span class="token comment">// 3. 阻塞式的从多路复用中获取文件事件</span>
+        <span class="token keyword">int</span> numEvents <span class="token operator">=</span> aeApi<span class="token punctuation">.</span><span class="token function">aeApiPoll</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> waitTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 4. 执行阻塞后的函数 afterSleepFunction(this);</span>
+
+        <span class="token comment">// 5. 执行需要触发的时间事件的函数</span>
+        <span class="token function">processTimeEvents</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">// 时间事件的触发处理</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> <span class="token function">processTimeEvents</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+        <span class="token comment">// 1. 获取双向链表的头节点</span>
+        <span class="token class-name">AeTimeEvent</span> timeEvent <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>aeTimeEvent<span class="token punctuation">;</span>
+
+        <span class="token keyword">while</span> <span class="token punctuation">(</span>timeEvent <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+            <span class="token comment">// 节点的 id == -1, 表示这个节点需要删除</span>
+            <span class="token comment">// 节点的删除是延迟删的, 需要删除时, 先打标为 -1，下次执行时, 在删除</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>timeEvent<span class="token punctuation">.</span><span class="token function">getId</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token comment">// 2. 双向链表的节点删除, 同时将下一个节点赋值给 timeEvent</span>
+                <span class="token comment">// TODO 逻辑省略, 就是常见的双向链表的节点删除</span>
+                <span class="token keyword">continue</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+
+            <span class="token comment">// 3. 计算当前的时间和当前节点的时间是否匹配，匹配这个时间事件需要执行</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">timeEventNeedHander</span><span class="token punctuation">(</span>timeEvent<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token comment">// 执行时间事件的函数，同时会返回一个数字, 大于等于 0 表示多少秒后再执行, 小于 0, 表示不在需要了</span>
+                <span class="token keyword">int</span> retVal <span class="token operator">=</span> timeEvent<span class="token punctuation">.</span><span class="token function">getFunction</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>retVal <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                    <span class="token comment">// 需要销毁, 设置 id 为 -1, 下次再删除</span>
+                    timeEvent<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                    <span class="token comment">// 重新计算这个时间下次执行的时间</span>
+                    <span class="token function">updateAeTimeEventTime</span><span class="token punctuation">(</span>aeTimeEvent<span class="token punctuation">,</span> retVal<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">&#125;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>上面的逻辑很简单, 在事件轮询中, 加了 2 个方法, 用来给外部调用, 一个是添加时间事件, 一个是删除时间事件。<br>然后添加到事件轮询中的时间事件, 会在存储在事件轮询中的一个双向链表。</p>
+<p>然后在事件轮询的死循环中, 每一次操作</p>
+<blockquote>
+<ol>
+<li>计算整个事件双向链表中最快需要触发的时间事件, 距离触发还需要多少毫秒</li>
+<li>阻塞式地从多路复用中获取文件事件, 阻塞的时间就是上一步计算出来的时间</li>
+<li>从多路复用中的阻塞中返回后, 遍历整个时间事件双向链表</li>
+<li>遍历整个时间双向链表<blockquote>
+<p>4.1 遍历的时间事件的 fd &#x3D;&#x3D; -1, 表示这个时间事件需要删除, 进行删除 (Redis 对文件事件的删除都是延迟到下一轮循环删除)<br>4.2 遍历的时间事件没达到执行的时间, 跳过这个时间事件, 继续遍历下一个时间事件<br>4.3 遍历的时间事件需要达到了执行的时间, 执行这个时间事件里面的函数<br>4.4 执行的事件函数会返回一个整数, 整数值为 -1, 表示这个时间事件不需要了, 这时会将这个时间事件的 fd 设置为 -1, 下一轮循环删除<br>4.5 执行的事件函数返回的整数为大于等于 0, 表示这个时间事件还需要执行, 这个时间表示多久后执行, 根据这个时间计算这个时间事件下次执行的时间点, 继续遍历下一个时间事件</p>
+</blockquote>
+</li>
+</ol>
+</blockquote>
+<h3 id="5-2-2-文件事件"><a href="#5-2-2-文件事件" class="headerlink" title="5.2.2 文件事件"></a>5.2.2 文件事件</h3><p>了解多路复用和时间轮询的协助前, 需要先了解一个对象 AeFiredEvent: 已满足触发条件的文件事件。  </p>
+<p><img src="https://pic.imgdb.cn/item/655f6aeac458853aef990f78.png" alt="Alt &#39;AeFiredEvent 的定义&#39;"></p>
+<p>AeFiredEvent 中有 2 个属性</p>
+<blockquote>
+<ol>
+<li>fd 文件描述符, 可以简单的理解为文件事件的 id</li>
+<li>mask 文件事件的触发类型, 可读, 可写等</li>
+</ol>
+</blockquote>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AeEventLoop</span> <span class="token punctuation">&#123;</span>
+
+    <span class="token comment">// 程序自定义的文件事件, 程序初始时, 指定好了最大容量了</span>
+    <span class="token keyword">private</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">AeFileEvent</span><span class="token punctuation">></span></span> aeFileEvents<span class="token punctuation">;</span>
+    
+    <span class="token comment">// 存储多路复用中通知的已触发的事件数组</span>
+    <span class="token keyword">private</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">AeFiredEvent</span><span class="token punctuation">></span></span> aeFiredEvents<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token class-name">AeEventLoop</span><span class="token punctuation">(</span><span class="token keyword">int</span> maxSize<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>aeFileEvents <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span>maxSize<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>aeFiredEvents <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span>maxSize<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> maxSize<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>aeFileEvents<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">AeFileEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>aeFiredEvents<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">AeFiredEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>在事件轮询中, 有 2 个文件事件相关的数组</p>
+<blockquote>
+<ol>
+<li>aeFileEvents: 存储的就是注册到事件轮询中的文件事件</li>
+<li>aeFiredEvents: 存储的就是多路复用中通知的<strong>已触发</strong>的事件数组</li>
+</ol>
+</blockquote>
+<p>这 2 个数组的长度是一致的, 长度都是入参的 maxSize。<br>maxSize: 表示当前时间轮询支持的文件事件的个数, 也是<strong>所有文件事件 fd 的最大值, 也就是理解为所有文件事件 id 的最大的值</strong>。</p>
+<p>这个设计可以达到一个好处, 任意一个文件事件的 fd, 也就是 id, 都可以在上面 2 个数组对应的位置找到, <strong>aeFileEvents[fd]</strong>, 得到的就是对应的文件事件。</p>
+<p>aeFileEvents 和 aeFiredEvents 共同配合, 达到获取到已触发的文件事件的效果</p>
+<blockquote>
+<ol>
+<li>事件轮询 AeEventLoop 调用 AeApi 尝试获取已触发的文件事件, 会将自身 AeEventLoop 和阻塞的毫秒数作为参数传给 AeApi 的 aeApiPoll 方法</li>
+<li>AeApi 的 aeApiPoll 方法在阻塞指定毫秒数后, 可以得到已触发的事件 (也可能这段时间的确一个文件事件都没触发)</li>
+<li>根据触发的事件的个数, 获取到事件轮询中的 aeFiredEvents (已触发事件数组) 的前几个 AeFiredEvent, 将触发的事件的 fd 和 mask 逐个赋值给获取到的 AeFiredEvent</li>
+<li>然后将已触发的个数返回给调用的事件轮询 AeEventLoop</li>
+<li>事件轮询 AeEventLoop 根据已触发的个数, 获取 aeFiredEvents 的前几个 AeFiredEvent, 根据 AeFiredEvent 的 fd, 也就是事件的 id, 到 aeFileEvents 数组中获取对应的 AeFileEvent, 执行函数</li>
+</ol>
+</blockquote>
+<p>大体的流程如下:</p>
+<blockquote>
+<ol>
+<li>事件轮询 AeEventLoop 通过 AeApi 的 aeApiPoll 到多路复用 AeApiState 获取已触发的文件事件, 同时将自身作为参数传递过去, 并且说明最多支持在里面阻塞 1000 毫秒 (举例)</li>
+</ol>
+</blockquote>
+<p><img src="https://pic.imgdb.cn/item/655f6b03c458853aef99897b.png" alt="Alt &#39;事件轮询尝试从多路复用中获取已触发文件事件&#39;"></p>
+<blockquote>
+<ol start="2">
+<li>多路复用 AeApiState 在阻塞 1000 毫秒后, 获取到已触发的文件事件, 假设现在有文件描述符为 2 和 19 的 2 个文件事件触发了</li>
+<li>多路复用 AeApiState 通过入参的事件轮询 AeEventLoop, 获取到事件轮询中的 aeFiredEvents 数组的前 2 个, 将他们的 fd 和 mask 修改为触发的 2 个事件的 fd 和 mask</li>
+<li>多路复用修改为 AeApiState 的 aeFiredEvents 数组后, 然后通知调用方 AeEventLoop, 有 2 个文件事件触发了</li>
+</ol>
+</blockquote>
+<p><img src="https://pic.imgdb.cn/item/655f6b05c458853aef999432.png" alt="Alt &#39;多路复用修改并通知事件轮询已触发文件事件个数&#39;"></p>
+<blockquote>
+<ol start="5">
+<li>AeEventLoop 根据返回的 2, 获取到 aeFiredEvents 数组的前 2 个, 根据 AeFiredEvent 的 fd, 2 和 19, 到自己的文件事件数组的 aeFileEvents 的第 2 位和第 19 位获取 2 个文件事件</li>
+<li>执行获取到的 2 个文件事件的函数</li>
+</ol>
+</blockquote>
+<p><img src="https://pic.imgdb.cn/item/655f6afcc458853aef9968e6.png" alt="Alt &#39;事件轮询获取触发文件事件并执行&#39;"></p>
+<p>了解完大体的过程, 下面的代码逻辑应该就很清晰了</p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AeEventLoop</span> <span class="token punctuation">&#123;</span>
+
+    <span class="token keyword">private</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">AeFileEvent</span><span class="token punctuation">></span></span> aeFileEvents<span class="token punctuation">;</span>
+	<span class="token keyword">private</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">AeFiredEvent</span><span class="token punctuation">></span></span> aeFiredEvents<span class="token punctuation">;</span>
+	
+	<span class="token comment">// 对外暴露的函数: 向事件轮询中的文件事件添加新的文件事件</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">aeCreateFileEvent</span><span class="token punctuation">(</span><span class="token keyword">int</span> fd<span class="token punctuation">,</span> <span class="token keyword">int</span> mask<span class="token punctuation">,</span> <span class="token class-name">Function</span> function<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token comment">// 1. 先向多路复用注册这个事件, 后续才能感知到什么时候触发</span>
+	 	aeApi<span class="token punctuation">.</span><span class="token function">aeApiAddEvent</span><span class="token punctuation">(</span>fd<span class="token punctuation">,</span> mask<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token comment">// 2. 根据文件描述符从文件事件数组中获取对应的位置的文件事件</span>
+ 		<span class="token class-name">AeFileEvent</span> aeFileEvent <span class="token operator">=</span> aeFileEvents<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>fd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token comment">// 3. 将当前关注的事件类型和执行函数覆盖过去</span>
+		aeFileEvent<span class="token punctuation">.</span><span class="token function">setXXX</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token comment">// 对外暴露的函数: 向事件轮询中的文件事件删除对应的文件事件</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">aeDeleteTimeEvent</span><span class="token punctuation">(</span><span class="token keyword">int</span> fd<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token comment">// 逻辑差不多, 从多路复用中删除即可</span>
+	<span class="token punctuation">&#125;</span>
+
+ 	<span class="token comment">// 启动函数没有任何变化</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">aeMain</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>stop <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">aeProcessEvents</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span> 
+
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">aeProcessEvents</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+        <span class="token comment">// 1. 调用多路复用, 将符合条件的事件，放到 this(也就是当前的 AeEventLoop) 的 aeFiredEvents 中</span>
+        <span class="token comment">// 同时返回了, 总共触发了多少个函数</span>
+	 	<span class="token keyword">int</span> numEvents <span class="token operator">=</span> aeApi<span class="token punctuation">.</span><span class="token function">aeApiPoll</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> waitTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+		<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> numEvents<span class="token punctuation">;</span> j<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// 2. 遍历触发的已触发事件数组</span>
+            <span class="token class-name">AeFiredEvent</span> aeFiredEvent <span class="token operator">=</span> aeFiredEvents<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>j<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token comment">// aeFiredEvent 的 fd 就是对应的文件描述符</span>
+            <span class="token comment">// 而 aeFileEvent 已经将最大的 fd 声明成一个数组了, 可以在数组中找到其对应的事件</span>
+            <span class="token class-name">AeFileEvent</span> aeFileEvent <span class="token operator">=</span> aeFileEvents<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>aeFiredEvent<span class="token punctuation">.</span><span class="token function">getFd</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token comment">// 触发的是可读事件，执行可读函数, 是可写函数, 执行可先函数</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>aeFileEvent<span class="token punctuation">.</span><span class="token function">getMask</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                aeFileEvent<span class="token punctuation">.</span><span class="token function">getReadFileProc</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                aeFileEvent<span class="token punctuation">.</span><span class="token function">getWriteFileProc</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<h2 id="6-事件轮询在-Redis-在运行中的简单分析"><a href="#6-事件轮询在-Redis-在运行中的简单分析" class="headerlink" title="6 事件轮询在 Redis 在运行中的简单分析"></a>6 事件轮询在 Redis 在运行中的简单分析</h2><ol>
+<li>Redis 启动, 加载大量的配置信息, 初始化需要初始的配置等</li>
+<li>创建唯一一个的事件轮询 AeEventLoop, 在创建时, 指定了最大的文件描述符 (默认为 10128), 这里我们假设为 100, 这时我们就得到了一个事件轮询对象<br><img src="https://pic.imgdb.cn/item/655f6b01c458853aef997ecb.png" alt="Alt &#39;AeEventLoop 创建&#39;"></li>
+<li>向事件轮询注册一个 100 毫秒 (虽然注册到事件轮询是 1 毫秒, 但是第一次执行完成后, 重新时间的时间为 1000&#x2F;server.hz, server.hz 默认等于 10, 可以动态修改) 执行一次的时间事件, 执行的函数为 serverCron (这个函数是 Redis 初始的唯一一个定时事件, 里面包含了内存的定时释放, 主从心跳的维持等, 同时虽然是 100 毫秒执行 1 次, 但是内部通过维护一个频率的函数, 可以达到不同的时机触发不同的逻辑), 最新的事件轮询就变成这样:<br><img src="https://pic.imgdb.cn/item/655f6b07c458853aef999f18.png" alt="Alt &#39;AeEventLoop 设置时间事件&#39;"></li>
+<li>和 6379 端⼝建⽴起 Socket 监听, 得到了对应这个端⼝的⼀个⽂件描述符 (这⾥假设为 1)</li>
+<li>向事件轮询注册⼀个可读事件, ⽂件描述符 1 (这⾥可以之间认为 1 就是 6379 端⼝), 关⼼他的可读事件(有客户端连接到这个端⼝了), 执⾏的函数为 acceptTcpHandler (后续所有的客户端连接到这个 Redis 的事件都会被多路复⽤监听到, 同时通知时间轮询触发 acceptTcpHandler 函数), 最新的事件轮询就变成这样:<br><img src="https://pic.imgdb.cn/item/655f6af7c458853aef994ef6.png" alt="Alt &#39;AeEventLoop 设置端口监听文件事件&#39;"></li>
+<li>向事件轮询注册阻塞前后的回调函数 beforeSleep&#x2F;afterSleep (beforeSleep 的逻辑很多, 包括先保存 AOF 缓存, ⽴即向从节点发送⼀次 ack 等操作), 最新的事件轮询就变成这样了<br><img src="https://pic.imgdb.cn/item/655f6af2c458853aef993221.png" alt="Alt &#39;AeEventLoop 设置阻塞前后执行函数&#39;"></li>
+<li>调⽤事件轮询 AeEventLoop 的 aeMain ⽅法, 启动事件轮询的死循环</li>
+<li>从时间链表中找到执⾏时间距离当前最近的⼀个时间事件, 计算出⼀个阻塞时间</li>
+<li>调⽤阻塞前的函数 beforeSleep</li>
+<li>调⽤ aeApi 的阻塞⽅法获取关⼼的事件, 阻塞时间为上⾯计算出来的事件 (这时返回值为 0, 没有关⼼的事件)</li>
+<li>调⽤阻塞后的函数 afterSleep</li>
+<li>aeApi 返回了 0, 没有关⼼的⽂件事件, 跳过⽂件事件的触发</li>
+<li>遍历整个时间事件链表, ⾥⾯有需要触发的, 就进⾏触发, 同时触发的函数返回值为 -1, 就将 fd 设置为 -1, <strong>下次遍历时间事件链表时</strong>, 会从链表中移除, 不为 -1, 根据返回值设置其下次执⾏的时间</li>
+<li>死循环，回到⽅法头, ⼜继续重复上⾯的 8 -13 步骤</li>
+<li>突然 IP: 192.168.1.11 向 Redis 发起了 Socket 连接, 多路复⽤这时发现是上层关⼼的可读事件, 保留起来</li>
+<li>死循环⼜执⾏到了第 10 步, 这时 aeApi 会得到 6379 端⼝的⽂件描述符, 也就是上⾯我们说的⽂件描述符 1 , 将事件轮询的 aeFiredEvents 数组的第⼀个覆盖为⼀个新的 AeFiredEvent, fd 为 1, mask 为可读标识, 最新的事件轮询就变成这样了<br><img src="https://pic.imgdb.cn/item/655f6aefc458853aef99264b.png" alt="Alt &#39;AeEventLoop 有触发文件事件需要执行&#39;"></li>
+<li>死循环得到 aeApi 的返回值不为 0, 根据返回值, 依次从 aeFiredEvents 中获取多少个对象, 这⾥只获取到⼀个, 从第⼀个中获取到⽂件描述符为 1, 从 aeFileEvent 中获取到位置 1 的⽂件事件, 触发其函数, 这⾥是 acceptTcpHandler (acceptTcpHandler 主要是⽤来处理客户端的 socket 连接, 被判定可以处理后，可以通过 ip 得到⼀个⽂件描述符, 然后根据这个⽂件描述符向事件轮询注册⼀个可读事件 (等待客户端发送请求参数)，处理函数为 readQueryFromClient, 而 readQueryFromClient ⾥⾯处理完客户端的请求后, ⼜会将这个 ip 也就是⽂件描述符从事件轮询中移除, 不在关心这个 ip 任何事件)</li>
+<li>执⾏完⽂件事件, ⼜回到 13, 执⾏完，⼜回到⽅法头, ⼜继续重复上⾯的 8 - 13 步骤</li>
+</ol>
+<p>至此, Redis 事件轮询就大体分析完了。</p>
+
+                
+            </div>
+            <hr/>
+        </div>
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+            <div class="card">
+                <a href="/article/2021/3671033365/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/23.jpg" class="responsive-img" alt="Redis SkipList 编码">
+                        
+                        <span class="card-title">Redis SkipList 编码</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="far fa-clock fa-fw icon-date"></i>2021-11-29
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Redis/">
+                        <span class="chip bg-color">Redis</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/article/2021/2617835609/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/9.jpg" class="responsive-img" alt="Redis ZipList 编码">
+                        
+                        <span class="card-title">Redis ZipList 编码</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-11-21
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Redis/">
+                        <span class="chip bg-color">Redis</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+
+</div>
+
+
+
+<!-- 代码块功能依赖 -->
+<script type="text/javascript" src="/libs/codeBlock/codeBlockFuction.js"></script>
+
+
+  <!-- 是否加载使用自带的 prismjs. -->
+  <script type="text/javascript" src="/libs/prism/prism.min.js"></script>
+
+
+<!-- 代码语言 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeLang.js"></script>
+
+
+<!-- 代码块复制 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeCopy.js"></script>
+
+
+<!-- 代码块收缩 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeShrink.js"></script>
+
+
+
+    </div>
+    <div id="toc-aside" class="expanded col l3 hide-on-med-and-down">
+        <div class="toc-widget card" style="background-color: white;">
+            <div class="toc-title"><i class="far fa-list-alt"></i>&nbsp;&nbsp;目录</div>
+            <div id="toc-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOC 悬浮按钮. -->
+
+<div id="floating-toc-btn" class="hide-on-med-and-down">
+    <a class="btn-floating btn-large bg-color">
+        <i class="fas fa-list-ul"></i>
+    </a>
+</div>
+
+
+<script src="/libs/tocbot/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '#articleContent',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            collapseDepth: Number('0'),
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+
+        
+        /* 修复文章卡片 div 的宽度. */
+        let fixPostCardWidth = function (srcId, targetId) {
+            let srcDiv = $('#' + srcId);
+            if (srcDiv.length === 0) {
+                return;
+            }
+
+            let w = srcDiv.width();
+            if (w >= 450) {
+                w = w + 21;
+            } else if (w >= 350 && w < 450) {
+                w = w + 18;
+            } else if (w >= 300 && w < 350) {
+                w = w + 16;
+            } else {
+                w = w + 14;
+            }
+            $('#' + targetId).width(w);
+        };
+
+        // 切换TOC目录展开收缩的相关操作.
+        const expandedClass = 'expanded';
+        let $tocAside = $('#toc-aside');
+        let $mainContent = $('#main-content');
+        $('#floating-toc-btn .btn-floating').click(function () {
+            if ($tocAside.hasClass(expandedClass)) {
+                $tocAside.removeClass(expandedClass).hide();
+                $mainContent.removeClass('l9');
+            } else {
+                $tocAside.addClass(expandedClass).show();
+                $mainContent.addClass('l9');
+            }
+            fixPostCardWidth('artDetail', 'prenext-posts');
+        });
+        
+    });
+</script>
+
+    
+
+</main>
+
+
+
+
+    <footer class="page-footer bg-color">
+    
+
+    <div class="container row center-align"
+         style="margin-bottom: 0px !important;">
+        <div class="copy-right">
+            Copyright&nbsp;&copy;
+            
+                <span id="year">2019-2024</span>
+            
+            <br/>
+
+            Powered by&nbsp;<a href="https://hexo.io/" target="_blank">Hexo</a>
+            &nbsp; | &nbsp;&nbsp;Theme <a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">Matery</a>
+
+            
+            <br>
+            
+            
+                <span id="busuanzi_container_site_pv">
+                    总访问量:&nbsp;<span id="busuanzi_value_site_pv" class="white-color"></span>
+                </span>
+            
+            
+                <span id="busuanzi_container_site_uv">
+                    &nbsp; | &nbsp;&nbsp;总访问人数:&nbsp; <span id="busuanzi_value_site_uv" class="white-color"></span>
+                </span>
+            
+            <br>
+
+            <!-- 运行天数提醒. -->
+            
+            <br>
+            
+        </div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+    <!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fas fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字"
+                   class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+$(function () {
+    var searchFunc = function (path, search_id, content_id) {
+        'use strict';
+        $.ajax({
+            url: path,
+            dataType: "xml",
+            success: function (xmlResponse) {
+                // get the contents from search data
+                var datas = $("entry", xmlResponse).map(function () {
+                    return {
+                        title: $("title", this).text(),
+                        content: $("content", this).text(),
+                        url: $("url", this).text()
+                    };
+                }).get();
+                var $input = document.getElementById(search_id);
+                var $resultContent = document.getElementById(content_id);
+                $input.addEventListener('input', function () {
+                    var str = '<ul class=\"search-result-list\">';
+                    var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                    $resultContent.innerHTML = "";
+                    if (this.value.trim().length <= 0) {
+                        return;
+                    }
+                    // perform local searching
+                    datas.forEach(function (data) {
+                        var isMatch = true;
+                        var data_title = data.title.trim().toLowerCase();
+                        var data_content = data.content.trim().replace(/<[^>]+>/g, "").toLowerCase();
+                        var data_url = data.url;
+                        data_url = data_url.indexOf('/') === 0 ? data.url : '/' + data_url;
+                        var index_title = -1;
+                        var index_content = -1;
+                        var first_occur = -1;
+                        // only match artiles with not empty titles and contents
+                        if (data_title !== '' && data_content !== '') {
+                            keywords.forEach(function (keyword, i) {
+                                index_title = data_title.indexOf(keyword);
+                                index_content = data_content.indexOf(keyword);
+                                if (index_title < 0 && index_content < 0) {
+                                    isMatch = false;
+                                } else {
+                                    if (index_content < 0) {
+                                        index_content = 0;
+                                    }
+                                    if (i === 0) {
+                                        first_occur = index_content;
+                                    }
+                                }
+                            });
+                        }
+                        // show search results
+                        if (isMatch) {
+                            str += "<li><a href='" + data_url + "' class='search-result-title'>" + data_title + "</a>";
+                            var content = data.content.trim().replace(/<[^>]+>/g, "");
+                            if (first_occur >= 0) {
+                                // cut out 100 characters
+                                var start = first_occur - 20;
+                                var end = first_occur + 80;
+                                if (start < 0) {
+                                    start = 0;
+                                }
+                                if (start === 0) {
+                                    end = 100;
+                                }
+                                if (end > content.length) {
+                                    end = content.length;
+                                }
+                                var match_content = content.substr(start, end);
+                                // highlight all keywords
+                                keywords.forEach(function (keyword) {
+                                    var regS = new RegExp(keyword, "gi");
+                                    match_content = match_content.replace(regS, "<em class=\"search-keyword\">" + keyword + "</em>");
+                                });
+
+                                str += "<p class=\"search-result\">" + match_content + "...</p>"
+                            }
+                            str += "</li>";
+                        }
+                    });
+                    str += "</ul>";
+                    $resultContent.innerHTML = str;
+                });
+            }
+        });
+    };
+
+    searchFunc('/search.xml', 'searchInput', 'searchResult');
+});
+</script>
+
+    <!-- 白天和黑夜主题 -->
+<div class="stars-con">
+    <div id="stars"></div>
+    <div id="stars2"></div>
+    <div id="stars3"></div>  
+</div>
+
+<script>
+    function switchNightMode() {
+        $('<div class="Cuteen_DarkSky"><div class="Cuteen_DarkPlanet"></div></div>').appendTo($('body')),
+        setTimeout(function () {
+            $('body').hasClass('DarkMode') 
+            ? ($('body').removeClass('DarkMode'), localStorage.setItem('isDark', '0'), $('#sum-moon-icon').removeClass("fa-sun").addClass('fa-moon')) 
+            : ($('body').addClass('DarkMode'), localStorage.setItem('isDark', '1'), $('#sum-moon-icon').addClass("fa-sun").removeClass('fa-moon')),
+            
+            setTimeout(function () {
+            $('.Cuteen_DarkSky').fadeOut(1e3, function () {
+                $(this).remove()
+            })
+            }, 2e3)
+        })
+    }
+</script>
+
+    <!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+</div>
+
+
+    <script src="/libs/materialize/materialize.min.js"></script>
+    <script src="/libs/masonry/masonry.pkgd.min.js"></script>
+    <script src="/libs/aos/aos.js"></script>
+    <script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+    <script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+    <script src="/js/matery.js"></script>
+
+    
+
+    
+    
+    
+
+    <!-- 雪花特效 -->
+    
+
+    <!-- 鼠标星星特效 -->
+    
+
+     
+        <script src="https://ssl.captcha.qq.com/TCaptcha.js"></script>
+        <script src="/libs/others/TencentCaptcha.js"></script>
+        <button id="TencentCaptcha" data-appid="xxxxxxxxxx" data-cbfn="callback" type="button" hidden></button>
+    
+
+    <!-- Baidu Analytics -->
+
+    <!-- Baidu Push -->
+
+<script>
+    (function () {
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        } else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+
+    
+    
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+    
+
+    
+
+    
+
+    <!--腾讯兔小巢-->
+    
+    
+
+    
+
+    
+
+    
+    <script src="/libs/instantpage/instantpage.js" type="module"></script>
+    
+
+</body>
+
+</html>

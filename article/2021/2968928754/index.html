@@ -1,0 +1,1128 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="Java BlockingQueue 简介, Lcn29">
+    <meta name="description" content="1 简介在 Java 中容器主要有 2 个大类 Collection 和 Map, 其中 Collection 主用用于数据的直接存储 (Map 则是一种键值对的存储方式, 除了要存储的数据外, 还需要有一个 key 和数据建立一个映射关系">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+    <title>Java BlockingQueue 简介 | Lcn29</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+
+
+    <!-- bg-cover style     -->
+
+
+
+<link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+<link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+<link rel="stylesheet" type="text/css" href="/css/matery.css">
+<link rel="stylesheet" type="text/css" href="/css/my.css">
+<link rel="stylesheet" type="text/css" href="/css/dark.css" media="none" onload="if(media!='all')media='all'">
+
+
+
+
+    <link rel="stylesheet" href="/libs/tocbot/tocbot.css">
+    <link rel="stylesheet" href="/css/post.css">
+
+
+
+
+    
+
+
+
+    <script src="/libs/jquery/jquery-3.6.0.min.js"></script>
+
+<meta name="generator" content="Hexo 6.3.0"><link rel="alternate" href="/atom.xml" title="Lcn29" type="application/atom+xml">
+</head>
+
+
+<body>
+    <header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.svg" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">Lcn29</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fas fa-bars"></i></a>
+<ul class="right nav-menu">
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/" class="waves-effect waves-light">
+      
+      <i class="fas fa-home" style="zoom: 0.6;"></i>
+      
+      <span>首页</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/tags" class="waves-effect waves-light">
+      
+      <i class="fas fa-tags" style="zoom: 0.6;"></i>
+      
+      <span>标签</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/archives" class="waves-effect waves-light">
+      
+      <i class="fas fa-archive" style="zoom: 0.6;"></i>
+      
+      <span>归档</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/about" class="waves-effect waves-light">
+      
+      <i class="fas fa-user-circle" style="zoom: 0.6;"></i>
+      
+      <span>关于</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/friends" class="waves-effect waves-light">
+      
+      <i class="fas fa-address-book" style="zoom: 0.6;"></i>
+      
+      <span>友链</span>
+    </a>
+    
+  </li>
+  
+  <li>
+    <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+      <i id="searchIcon" class="fas fa-search" title="搜索" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+  <li>
+    <a href="javascript:;" class="waves-effect waves-light" onclick="switchNightMode()" title="深色/浅色模式" >
+      <i id="sum-moon-icon" class="fas fa-sun" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+</ul>
+
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.svg" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">Lcn29</div>
+        <div class="logo-desc">
+            
+            Technical System
+            
+        </div>
+    </div>
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li class="m-nav-item">
+	  
+		<a href="/" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-home"></i>
+			
+			首页
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/tags" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-tags"></i>
+			
+			标签
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/archives" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-archive"></i>
+			
+			归档
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/about" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-user-circle"></i>
+			
+			关于
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/friends" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-address-book"></i>
+			
+			友链
+		</a>
+          
+        </li>
+        
+        
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="https://github.com/lcn29" class="waves-effect waves-light" target="_blank">
+                <i class="fab fa-github-square fa-fw"></i>Fork Me
+            </a>
+        </li>
+        
+    </ul>
+</div>
+
+
+        </div>
+
+        
+            <style>
+    .nav-transparent .github-corner {
+        display: none !important;
+    }
+
+    .github-corner {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        right: 0;
+        border: 0;
+        transform: scale(1.1);
+    }
+
+    .github-corner svg {
+        color: #121317;
+        fill: #fff;
+        height: 64px;
+        width: 64px;
+    }
+
+    .github-corner:hover .octo-arm {
+        animation: a 0.56s ease-in-out;
+    }
+
+    .github-corner .octo-arm {
+        animation: none;
+    }
+
+    @keyframes a {
+        0%,
+        to {
+            transform: rotate(0);
+        }
+        20%,
+        60% {
+            transform: rotate(-25deg);
+        }
+        40%,
+        80% {
+            transform: rotate(10deg);
+        }
+    }
+</style>
+
+<a href="https://github.com/lcn29" class="github-corner tooltipped hide-on-med-and-down" target="_blank"
+   data-tooltip="Fork Me" data-position="left" data-delay="50">
+    <svg viewBox="0 0 250 250" aria-hidden="true">
+        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+        <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
+              fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+        <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
+              fill="currentColor" class="octo-body"></path>
+    </svg>
+</a>
+        
+    </nav>
+
+</header>
+
+    
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/19.jpg')">
+    <div class="container" style="right: 0px;left: 0px;">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <h1 class="description center-align post-title">Java BlockingQueue 简介</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<main class="post-container content">
+
+    
+    <div class="row">
+    <div id="main-content" class="col s12 m12 l9">
+        <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/Java/">
+                                <span class="chip bg-color">Java</span>
+                            </a>
+                        
+                            <a href="/tags/Java-%E9%9B%86%E5%90%88/">
+                                <span class="chip bg-color">Java 集合</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2021-09-26
+                </div>
+                
+
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-check fa-fw"></i>更新日期:&nbsp;&nbsp;
+                    2024-10-10
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
+                    2.4k
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                    9 分
+                </div>
+                
+
+                
+                    <div id="busuanzi_container_page_pv" class="info-break-policy">
+                        <i class="far fa-eye fa-fw"></i>阅读次数:&nbsp;&nbsp;
+                        <span id="busuanzi_value_page_pv"></span>
+                    </div>
+				
+            </div>
+        </div>
+        <hr class="clearfix">
+
+        
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.min.css">
+        
+
+        
+
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <h2 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h2><p>在 Java 中容器主要有 2 个大类 Collection 和 Map, 其中 Collection 主用用于数据的直接存储 (Map 则是一种键值对的存储方式, 除了要存储的数据外, 还需要有一个 key 和数据建立一个映射关系)。<br>Collection 使用的最多的大概就是 List, Set 和 Queue。<br>而在日常的开发中, 会根据不同数据的特性, 比如是否可重复, 是否需要有序等条件选择不同的集合, 同时还会考虑其他的因素, 比如线程是否安全。</p>
+<p>而本文的主要是对基于 Queue 派生的另一个线程安全的接口 – BlockingQueue 做个简单的介绍。</p>
+<p>在经典的“生产者-消费者”问题中, 队列通常被视为线程间操作的数据容器。这样一来, 我们能够将各个模块的业务功能解耦。生产者负责将其“生产”出来的数据放置在数据容器中, 而消费者则仅需在“数据容器”中获取数据。这种设计使得生产者线程和消费者线程能够实现解耦, 各自专注于自身的业务功能</p>
+<p>而本篇主要对基于 Queue 派生的另一个线程安全的接口 BlockingQueue 做一个简单的介绍。</p>
+<p>阻塞队列 (BlockingQueue) 被广泛使用在 “生产者-消费者” 问题中, 作为线程间操作的数据容器, 使得各个模块的业务功能进行解耦。生产者专注生产数据, 然后投递到队列中即可, 而消费者则从队列中获取数据, 然后专注消费数据。</p>
+<p>BlockingQueue 能够高频的应用于 “生产者-消费者” 其原因是它提供了可阻塞的插入和移除的方法。<br><strong>当队列容器已满, 生产者线程会被阻塞, 直到队列未满；当队列容器为空时, 消费者线程会被阻塞, 直至队列非空时为止</strong>。</p>
+<h2 id="2-BlockingQueue-的基本操作"><a href="#2-BlockingQueue-的基本操作" class="headerlink" title="2 BlockingQueue 的基本操作"></a>2 BlockingQueue 的基本操作</h2><p>几种不同的场景的新增删除和检查方法列表</p>
+<table>
+<thead>
+<tr>
+<th align="center"></th>
+<th align="center">Throws Excepiton</th>
+<th align="center">Special Value</th>
+<th align="center">Blocks</th>
+<th align="center">Times Out</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">insert</td>
+<td align="center">add(e)</td>
+<td align="center">offer(e)</td>
+<td align="center">put(e)</td>
+<td align="center">offer(e, time, unit)</td>
+</tr>
+<tr>
+<td align="center">remove</td>
+<td align="center">remove()</td>
+<td align="center">poll()</td>
+<td align="center">take()</td>
+<td align="center">poll(time, unit)</td>
+</tr>
+<tr>
+<td align="center">examine</td>
+<td align="center">element()</td>
+<td align="center">peek()</td>
+<td align="center">not applicable</td>
+<td align="center">not applicable</td>
+</tr>
+</tbody></table>
+<p>新增数据</p>
+<blockquote>
+<ol>
+<li>add(E e): 往队列插入数据, 当队列满时, 插入元素时会抛出 IllegalStateException 异常  </li>
+<li>offer(E e): 当往队列插入数据时, 插入成功返回 true, 否则返回 false, 当队列满时不会抛出异常</li>
+<li>put(E e): 当阻塞队列容量已经满时, 往阻塞队列插入数据的线程会被阻塞, 直至阻塞队列已经有空余的容量可供使用 </li>
+<li>offer(E e, long timeout, TimeUnit unit)：若阻塞队列已经满时, 同样会阻塞插入数据的线程, 直至阻塞队列已经有空余的地方, 与 put 方法不同的是, 该方法会有一个超时时间, 若超过当前给定的超时时间, 插入数据的线程会退出</li>
+</ol>
+</blockquote>
+<p>删除元素</p>
+<blockquote>
+<ol>
+<li>remove(Object o)：从队列中删除数据, 成功则返回 true, 否则为 false </li>
+<li>poll(): 删除队列中第一个的数据, 当队列为空时, 返回 null</li>
+<li>take()：当阻塞队列为空时, 获取队头数据的线程会被阻塞  </li>
+<li>poll(long timeout, TimeUnit unit): 当阻塞队列为空时, 获取数据的线程会被阻塞, 另外, 如果被阻塞的线程超过了给定的时长, 该线程会退出</li>
+</ol>
+</blockquote>
+<p>查看元素</p>
+<blockquote>
+<ol>
+<li>element(): 获取队头元素, 如果队列为空时则抛出 NoSuchElementException 异常  </li>
+<li>peek()：获取队头元素, 如果队列为空, 返回 null</li>
+</ol>
+</blockquote>
+<h2 id="3-常用的-BlockingQueue"><a href="#3-常用的-BlockingQueue" class="headerlink" title="3 常用的 BlockingQueue"></a>3 常用的 BlockingQueue</h2><p>实现 BlockingQueue 接口的有</p>
+<blockquote>
+<ol>
+<li>ArrayBlockingQueue</li>
+<li>LinkedBlockingQueue </li>
+<li>PriorityBlockingQueue</li>
+<li>SynchronousQueue</li>
+<li>LinkedTransferQueue</li>
+<li>DelayQueue</li>
+<li>LinkedBlockingDeque</li>
+</ol>
+</blockquote>
+<p>而这几种常见的阻塞队列也是在实际编程中会常用的, 下面对这几种常见的阻塞队列进行说明。</p>
+<h3 id="3-1-ArrayBlockingQueue"><a href="#3-1-ArrayBlockingQueue" class="headerlink" title="3.1 ArrayBlockingQueue"></a>3.1 ArrayBlockingQueue</h3><p>特点</p>
+<blockquote>
+<ol>
+<li>ArrayBlockingQueue 一旦创建, 容量不能改变</li>
+<li>ArrayBlockingQueue 是由数组实现的有界阻塞队列, 该队列里面的元素满足 FIFO (先进先出), 因此, 头元素在队列中存在时间最长, 而队尾数据则是当前队列最新的数据元素。   </li>
+<li>ArrayBlockingQueue 可作为 “有界数据缓冲区”, 生产者插入数据到队列容器中, 并由消费者提取。  </li>
+<li>当队列容量满时, 尝试将元素放入队列将导致操作阻塞, 同理尝试从一个空队列中取一个元素也会同样阻塞。</li>
+</ol>
+</blockquote>
+<p>ArrayBlockingQueue 默认情况下不能保证线程访问队列的公平性。<br>所谓公平性是指严格按照线程等待的绝对时间顺序, 即最先等待的线程能够最先访问到 ArrayBlockingQueue 中的数据。<br>而非公平性则是指访问 ArrayBlockingQueue 的顺序不是遵守严格的时间顺序。有可能存在, ArrayBlockingQueue 从无数据变为有数据, 即可被访问时, 长时间阻塞的线程依然无法访问到 ArrayBlockingQueue。<br>如果需要保证公平性, 可以在声明 ArrayBlockingQueue 的时候指明公平锁, 但是这通常会降低吞吐量。</p>
+<p>ArrayBlockingQueue 的声明:  </p>
+<pre class="language-java" data-language="java"><code class="language-java"><span class="token comment">// true 公平竞争  false 非公平竞争</span>
+<span class="token class-name">ArrayBlockingQueue</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">></span></span> blockingQueue <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayBlockingQueue</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span>容量大小<span class="token punctuation">,</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span> </code></pre>
+
+<h3 id="3-2-LinkedBlockingQueue"><a href="#3-2-LinkedBlockingQueue" class="headerlink" title="3.2 LinkedBlockingQueue"></a>3.2 LinkedBlockingQueue</h3><p>LinkedBlockingQueue 是用链表实现的有界阻塞队列, 同样满足 FIFO 的特性, 与 ArrayBlockingQueue 相比起来具有更高的吞吐量, 为了防止 LinkedBlockingQueue 容量迅速增, 损耗大量内存。<br>通常在创建 LinkedBlockingQueue 对象时, 会指定其大小, 如果未指定, 容量等于 Integer.MAX_VALUE。</p>
+<h3 id="3-3-PriorityBlockingQueue"><a href="#3-3-PriorityBlockingQueue" class="headerlink" title="3.3 PriorityBlockingQueue"></a>3.3 PriorityBlockingQueue</h3><p>PriorityBlockingQueue 是一个支持优先级的无界阻塞队列。<br>默认情况下元素采用自然顺序进行排序, 也可以通过自定义类实现 compareTo() 方法来指定元素排序规则, 或者初始化时通过构造器参数 Comparator 来指定排序规则。</p>
+<h3 id="3-4-SynchronousQueue"><a href="#3-4-SynchronousQueue" class="headerlink" title="3.4 SynchronousQueue"></a>3.4 SynchronousQueue</h3><p>SynchronousQueue 每个插入操作必须等待另一个线程进行相应的删除操作, 因此, SynchronousQueue 实际上没有存储任何数据元素, 因为只有线程在删除数据时, 其他线程才能插入数据。<br>同样的, 如果当前有线程在插入数据时, 线程才能删除数据。SynchronousQueue 也可以通过构造器参数来为其指定公平性。</p>
+<h3 id="3-5-LinkedTransferQueue"><a href="#3-5-LinkedTransferQueue" class="headerlink" title="3.5 LinkedTransferQueue"></a>3.5 LinkedTransferQueue</h3><p>LinkedTransferQueue 是一个由链表数构成的无界阻塞队列, 由于该队列实现了 TransferQueue 接口, 与其他阻塞队列相比主要有以下不同的方法</p>
+<p><strong>transfer(E e)</strong>: 如果当前有线程 (消费者) 正在调用 take() 方法或者可延时的 poll() 方法进行消费数据时, 生产者线程可以调用这个方法将数据传递给消费者线程。<br>如果当前没有消费者线程的话, 生产者线程就会将数据插入到队尾, 直到有消费者能够进行消费才能退出</p>
+<p><strong>tryTransfer(E e)</strong>: 如果当前有线程 (消费者) 正在调用 take() 方法或者可延时的 poll() 方法进行消费数据时, 生产者线程可以调用这个方法将数据立即传送给消费者线程, 如果当前没有消费者线程消费数据的话, 就立即返回 false。  </p>
+<p>因此, 与 transfer 方法相比, transfer 方法是必须等到有消费者线程消费数据时, 生产者线程才能够返回。而 tryTransfer 方法能够立即返回结果退出。</p>
+<p><strong>tryTransfer(E e,long timeout,imeUnit unit)</strong>: 与 transfer 基本功能一样, 只是增加了超时特性, 如果数据到了规定的超时时间内没有消费者进行消费的话, 就返回 false。  </p>
+<h3 id="3-6-DelayQueue"><a href="#3-6-DelayQueue" class="headerlink" title="3.6 DelayQueue"></a>3.6 DelayQueue</h3><p>DelayQueue 是一个存放实现 Delayed 接口的数据的无界阻塞队列, 只有当数据对象的延时时间达到时才能插入到队列进行存储。如果当前所有的数据都还没有达到创建时所指定的延时期,<br>则队列没有队头, 并且线程通过 poll() 等方法获取数据元素则返回 null。</p>
+<p>所谓数据延时期满时, 则是通过 Delayed 接口的 <strong>long getDelay(TimeUnit unit)</strong> 进行判定,<br>如果该方法返回的是小于等于 0 则说明该数据元素的延时期已满。</p>
+<h3 id="3-7-LinkedBlockingDeque"><a href="#3-7-LinkedBlockingDeque" class="headerlink" title="3.7 LinkedBlockingDeque"></a>3.7 LinkedBlockingDeque</h3><p>LinkedBlockingDeque 是基于链表实现的有界阻塞双端队列, 如果在创建对象时为指定大小时, 其默认大小为 Integer.MAX_VALUE。<br>与 LinkedBlockingQueue 相比, 主要的不同点在于, LinkedBlockingDeque 具有双端队列的特性。 所以其提供的增删操作的方法有些不同。</p>
+<p><strong>头部操作</strong>    </p>
+<table>
+<thead>
+<tr>
+<th align="center"></th>
+<th align="center">Throws Excepiton</th>
+<th align="center">Special Value</th>
+<th align="center">Blocks</th>
+<th align="center">Times Out</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">insert</td>
+<td align="center">addFirst(e)</td>
+<td align="center">offerFirst(e)</td>
+<td align="center">putFirst(e)</td>
+<td align="center">offerFirst(e, time, unit)</td>
+</tr>
+<tr>
+<td align="center">remove</td>
+<td align="center">removeFirst()</td>
+<td align="center">pollFirst()</td>
+<td align="center">takeFirst()</td>
+<td align="center">pollFirst(time, unit)</td>
+</tr>
+<tr>
+<td align="center">examine</td>
+<td align="center">getFirst()</td>
+<td align="center">peekFirst()</td>
+<td align="center">not applicable</td>
+<td align="center">not applicable</td>
+</tr>
+</tbody></table>
+<p><strong>尾部操作</strong>    </p>
+<table>
+<thead>
+<tr>
+<th align="center"></th>
+<th align="center">Throws Excepiton</th>
+<th align="center">Special Value</th>
+<th align="center">Blocks</th>
+<th align="center">Times Out</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">insert</td>
+<td align="center">addLast(e)</td>
+<td align="center">offerLast(e)</td>
+<td align="center">putLast(e)</td>
+<td align="center">offerLast(e, time, unit)</td>
+</tr>
+<tr>
+<td align="center">remove</td>
+<td align="center">removeLast()</td>
+<td align="center">pollLast()</td>
+<td align="center">takeLast()</td>
+<td align="center">pollLast(time, unit)</td>
+</tr>
+<tr>
+<td align="center">examine</td>
+<td align="center">getLast()</td>
+<td align="center">peekLast()</td>
+<td align="center">not applicable</td>
+<td align="center">not applicable</td>
+</tr>
+</tbody></table>
+<p>LinkedBlockingDeque 的基本操作可以分为四种类型:   </p>
+<blockquote>
+<ol>
+<li>特殊情况, 抛出异常</li>
+<li>特殊情况, 返回特殊值如 null 或者 false  </li>
+<li>当线程不满足操作条件时, 线程会被阻塞直至条件满足   </li>
+<li>操作具有超时特性</li>
+</ol>
+</blockquote>
+<p>另外, LinkedBlockingDeque 实现了 BlockingDueue 接口, 而 LinkedBlockingQueue 实现的是 BlockingQueue, 这两个接口的主要区别如下</p>
+<p><strong>Insert</strong>  </p>
+<table>
+<thead>
+<tr>
+<th align="center"></th>
+<th align="center">Throws Excepiton</th>
+<th align="center">Special Value</th>
+<th align="center">Blocks</th>
+<th align="center">Times Out</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">BlockingDeque</td>
+<td align="center">addLast(e)</td>
+<td align="center">offerLast(e)</td>
+<td align="center">putLast(e)</td>
+<td align="center">offerLast(e, time, unit)</td>
+</tr>
+<tr>
+<td align="center">BlockingQueue</td>
+<td align="center">add(e)</td>
+<td align="center">offer(e)</td>
+<td align="center">put(e)</td>
+<td align="center">offer(e, time, unit)</td>
+</tr>
+</tbody></table>
+<p><strong>Remove</strong>  </p>
+<table>
+<thead>
+<tr>
+<th align="center"></th>
+<th align="center">Throws Excepiton</th>
+<th align="center">Special Value</th>
+<th align="center">Blocks</th>
+<th align="center">Times Out</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">BlockingDeque</td>
+<td align="center">removeFist()</td>
+<td align="center">pollFirst()</td>
+<td align="center">takeFirst()</td>
+<td align="center">pollFirst(time, unit)</td>
+</tr>
+<tr>
+<td align="center">BlockingQueue</td>
+<td align="center">remove()</td>
+<td align="center">poll()</td>
+<td align="center">take(e)</td>
+<td align="center">poll(e, time, unit)</td>
+</tr>
+</tbody></table>
+<p><strong>Examine</strong>  </p>
+<table>
+<thead>
+<tr>
+<th align="center"></th>
+<th align="center">Throws Excepiton</th>
+<th align="center">Special Value</th>
+<th align="center">Blocks</th>
+<th align="center">Times Out</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">BlockingDeque</td>
+<td align="center">getFirst()</td>
+<td align="center">peeKFirst()</td>
+<td align="center">not applicable</td>
+<td align="center">not applicable</td>
+</tr>
+<tr>
+<td align="center">BlockingQueue</td>
+<td align="center">element()</td>
+<td align="center">peek()</td>
+<td align="center">not applicable</td>
+<td align="center">not applicable</td>
+</tr>
+</tbody></table>
+<p>从上可以看出, 两个接口的很多功能是可以等价使用的, 比如 BlockingQueue 的 add 方法和 BlockingDeque 的 addLast 方法的功能是一样的。</p>
+
+                
+            </div>
+            <hr/>
+        </div>
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+            <div class="card">
+                <a href="/article/2021/3300141062/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/3.jpg" class="responsive-img" alt="Java LinkedBlockingQueue">
+                        
+                        <span class="card-title">Java LinkedBlockingQueue</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="far fa-clock fa-fw icon-date"></i>2021-09-27
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Java/">
+                        <span class="chip bg-color">Java</span>
+                    </a>
+                    
+                    <a href="/tags/Java-%E9%9B%86%E5%90%88/">
+                        <span class="chip bg-color">Java 集合</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/article/2021/143166105/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/15.jpg" class="responsive-img" alt="ConcurrentLinkedQueue">
+                        
+                        <span class="card-title">ConcurrentLinkedQueue</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-09-26
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Java/">
+                        <span class="chip bg-color">Java</span>
+                    </a>
+                    
+                    <a href="/tags/Java-%E9%9B%86%E5%90%88/">
+                        <span class="chip bg-color">Java 集合</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+
+</div>
+
+
+
+<!-- 代码块功能依赖 -->
+<script type="text/javascript" src="/libs/codeBlock/codeBlockFuction.js"></script>
+
+
+  <!-- 是否加载使用自带的 prismjs. -->
+  <script type="text/javascript" src="/libs/prism/prism.min.js"></script>
+
+
+<!-- 代码语言 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeLang.js"></script>
+
+
+<!-- 代码块复制 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeCopy.js"></script>
+
+
+<!-- 代码块收缩 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeShrink.js"></script>
+
+
+
+    </div>
+    <div id="toc-aside" class="expanded col l3 hide-on-med-and-down">
+        <div class="toc-widget card" style="background-color: white;">
+            <div class="toc-title"><i class="far fa-list-alt"></i>&nbsp;&nbsp;目录</div>
+            <div id="toc-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOC 悬浮按钮. -->
+
+<div id="floating-toc-btn" class="hide-on-med-and-down">
+    <a class="btn-floating btn-large bg-color">
+        <i class="fas fa-list-ul"></i>
+    </a>
+</div>
+
+
+<script src="/libs/tocbot/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '#articleContent',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            collapseDepth: Number('0'),
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+
+        
+        /* 修复文章卡片 div 的宽度. */
+        let fixPostCardWidth = function (srcId, targetId) {
+            let srcDiv = $('#' + srcId);
+            if (srcDiv.length === 0) {
+                return;
+            }
+
+            let w = srcDiv.width();
+            if (w >= 450) {
+                w = w + 21;
+            } else if (w >= 350 && w < 450) {
+                w = w + 18;
+            } else if (w >= 300 && w < 350) {
+                w = w + 16;
+            } else {
+                w = w + 14;
+            }
+            $('#' + targetId).width(w);
+        };
+
+        // 切换TOC目录展开收缩的相关操作.
+        const expandedClass = 'expanded';
+        let $tocAside = $('#toc-aside');
+        let $mainContent = $('#main-content');
+        $('#floating-toc-btn .btn-floating').click(function () {
+            if ($tocAside.hasClass(expandedClass)) {
+                $tocAside.removeClass(expandedClass).hide();
+                $mainContent.removeClass('l9');
+            } else {
+                $tocAside.addClass(expandedClass).show();
+                $mainContent.addClass('l9');
+            }
+            fixPostCardWidth('artDetail', 'prenext-posts');
+        });
+        
+    });
+</script>
+
+    
+
+</main>
+
+
+
+
+    <footer class="page-footer bg-color">
+    
+
+    <div class="container row center-align"
+         style="margin-bottom: 0px !important;">
+        <div class="copy-right">
+            Copyright&nbsp;&copy;
+            
+                <span id="year">2019-2024</span>
+            
+            <br/>
+
+            Powered by&nbsp;<a href="https://hexo.io/" target="_blank">Hexo</a>
+            &nbsp; | &nbsp;&nbsp;Theme <a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">Matery</a>
+
+            
+            <br>
+            
+            
+                <span id="busuanzi_container_site_pv">
+                    总访问量:&nbsp;<span id="busuanzi_value_site_pv" class="white-color"></span>
+                </span>
+            
+            
+                <span id="busuanzi_container_site_uv">
+                    &nbsp; | &nbsp;&nbsp;总访问人数:&nbsp; <span id="busuanzi_value_site_uv" class="white-color"></span>
+                </span>
+            
+            <br>
+
+            <!-- 运行天数提醒. -->
+            
+            <br>
+            
+        </div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+    <!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fas fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字"
+                   class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+$(function () {
+    var searchFunc = function (path, search_id, content_id) {
+        'use strict';
+        $.ajax({
+            url: path,
+            dataType: "xml",
+            success: function (xmlResponse) {
+                // get the contents from search data
+                var datas = $("entry", xmlResponse).map(function () {
+                    return {
+                        title: $("title", this).text(),
+                        content: $("content", this).text(),
+                        url: $("url", this).text()
+                    };
+                }).get();
+                var $input = document.getElementById(search_id);
+                var $resultContent = document.getElementById(content_id);
+                $input.addEventListener('input', function () {
+                    var str = '<ul class=\"search-result-list\">';
+                    var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                    $resultContent.innerHTML = "";
+                    if (this.value.trim().length <= 0) {
+                        return;
+                    }
+                    // perform local searching
+                    datas.forEach(function (data) {
+                        var isMatch = true;
+                        var data_title = data.title.trim().toLowerCase();
+                        var data_content = data.content.trim().replace(/<[^>]+>/g, "").toLowerCase();
+                        var data_url = data.url;
+                        data_url = data_url.indexOf('/') === 0 ? data.url : '/' + data_url;
+                        var index_title = -1;
+                        var index_content = -1;
+                        var first_occur = -1;
+                        // only match artiles with not empty titles and contents
+                        if (data_title !== '' && data_content !== '') {
+                            keywords.forEach(function (keyword, i) {
+                                index_title = data_title.indexOf(keyword);
+                                index_content = data_content.indexOf(keyword);
+                                if (index_title < 0 && index_content < 0) {
+                                    isMatch = false;
+                                } else {
+                                    if (index_content < 0) {
+                                        index_content = 0;
+                                    }
+                                    if (i === 0) {
+                                        first_occur = index_content;
+                                    }
+                                }
+                            });
+                        }
+                        // show search results
+                        if (isMatch) {
+                            str += "<li><a href='" + data_url + "' class='search-result-title'>" + data_title + "</a>";
+                            var content = data.content.trim().replace(/<[^>]+>/g, "");
+                            if (first_occur >= 0) {
+                                // cut out 100 characters
+                                var start = first_occur - 20;
+                                var end = first_occur + 80;
+                                if (start < 0) {
+                                    start = 0;
+                                }
+                                if (start === 0) {
+                                    end = 100;
+                                }
+                                if (end > content.length) {
+                                    end = content.length;
+                                }
+                                var match_content = content.substr(start, end);
+                                // highlight all keywords
+                                keywords.forEach(function (keyword) {
+                                    var regS = new RegExp(keyword, "gi");
+                                    match_content = match_content.replace(regS, "<em class=\"search-keyword\">" + keyword + "</em>");
+                                });
+
+                                str += "<p class=\"search-result\">" + match_content + "...</p>"
+                            }
+                            str += "</li>";
+                        }
+                    });
+                    str += "</ul>";
+                    $resultContent.innerHTML = str;
+                });
+            }
+        });
+    };
+
+    searchFunc('/search.xml', 'searchInput', 'searchResult');
+});
+</script>
+
+    <!-- 白天和黑夜主题 -->
+<div class="stars-con">
+    <div id="stars"></div>
+    <div id="stars2"></div>
+    <div id="stars3"></div>  
+</div>
+
+<script>
+    function switchNightMode() {
+        $('<div class="Cuteen_DarkSky"><div class="Cuteen_DarkPlanet"></div></div>').appendTo($('body')),
+        setTimeout(function () {
+            $('body').hasClass('DarkMode') 
+            ? ($('body').removeClass('DarkMode'), localStorage.setItem('isDark', '0'), $('#sum-moon-icon').removeClass("fa-sun").addClass('fa-moon')) 
+            : ($('body').addClass('DarkMode'), localStorage.setItem('isDark', '1'), $('#sum-moon-icon').addClass("fa-sun").removeClass('fa-moon')),
+            
+            setTimeout(function () {
+            $('.Cuteen_DarkSky').fadeOut(1e3, function () {
+                $(this).remove()
+            })
+            }, 2e3)
+        })
+    }
+</script>
+
+    <!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+</div>
+
+
+    <script src="/libs/materialize/materialize.min.js"></script>
+    <script src="/libs/masonry/masonry.pkgd.min.js"></script>
+    <script src="/libs/aos/aos.js"></script>
+    <script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+    <script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+    <script src="/js/matery.js"></script>
+
+    
+
+    
+    
+    
+
+    <!-- 雪花特效 -->
+    
+
+    <!-- 鼠标星星特效 -->
+    
+
+     
+        <script src="https://ssl.captcha.qq.com/TCaptcha.js"></script>
+        <script src="/libs/others/TencentCaptcha.js"></script>
+        <button id="TencentCaptcha" data-appid="xxxxxxxxxx" data-cbfn="callback" type="button" hidden></button>
+    
+
+    <!-- Baidu Analytics -->
+
+    <!-- Baidu Push -->
+
+<script>
+    (function () {
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        } else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+
+    
+    
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+    
+
+    
+
+    
+
+    <!--腾讯兔小巢-->
+    
+    
+
+    
+
+    
+
+    
+    <script src="/libs/instantpage/instantpage.js" type="module"></script>
+    
+
+</body>
+
+</html>

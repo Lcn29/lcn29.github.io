@@ -1,0 +1,1623 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="记一次 SQL 优化, Lcn29">
+    <meta name="description" content="1 背景我们的数据库中配置了一套慢 SQL 的监控(这里存在 SQL 本身不慢, 但是触发某些场景, 比如 filesort 等也会被采集), 会不定时的输出一批需要排查的 SQL, 下面挑了几条比较有意思的进行分享。
+2 table_1表">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+    <title>记一次 SQL 优化 | Lcn29</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+
+
+    <!-- bg-cover style     -->
+
+
+
+<link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+<link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+<link rel="stylesheet" type="text/css" href="/css/matery.css">
+<link rel="stylesheet" type="text/css" href="/css/my.css">
+<link rel="stylesheet" type="text/css" href="/css/dark.css" media="none" onload="if(media!='all')media='all'">
+
+
+
+
+    <link rel="stylesheet" href="/libs/tocbot/tocbot.css">
+    <link rel="stylesheet" href="/css/post.css">
+
+
+
+
+    
+
+
+
+    <script src="/libs/jquery/jquery-3.6.0.min.js"></script>
+
+<meta name="generator" content="Hexo 6.3.0"><link rel="alternate" href="/atom.xml" title="Lcn29" type="application/atom+xml">
+</head>
+
+
+<body>
+    <header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.svg" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">Lcn29</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fas fa-bars"></i></a>
+<ul class="right nav-menu">
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/" class="waves-effect waves-light">
+      
+      <i class="fas fa-home" style="zoom: 0.6;"></i>
+      
+      <span>首页</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/tags" class="waves-effect waves-light">
+      
+      <i class="fas fa-tags" style="zoom: 0.6;"></i>
+      
+      <span>标签</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/archives" class="waves-effect waves-light">
+      
+      <i class="fas fa-archive" style="zoom: 0.6;"></i>
+      
+      <span>归档</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/about" class="waves-effect waves-light">
+      
+      <i class="fas fa-user-circle" style="zoom: 0.6;"></i>
+      
+      <span>关于</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/friends" class="waves-effect waves-light">
+      
+      <i class="fas fa-address-book" style="zoom: 0.6;"></i>
+      
+      <span>友链</span>
+    </a>
+    
+  </li>
+  
+  <li>
+    <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+      <i id="searchIcon" class="fas fa-search" title="搜索" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+  <li>
+    <a href="javascript:;" class="waves-effect waves-light" onclick="switchNightMode()" title="深色/浅色模式" >
+      <i id="sum-moon-icon" class="fas fa-sun" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+</ul>
+
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.svg" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">Lcn29</div>
+        <div class="logo-desc">
+            
+            Technical System
+            
+        </div>
+    </div>
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li class="m-nav-item">
+	  
+		<a href="/" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-home"></i>
+			
+			首页
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/tags" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-tags"></i>
+			
+			标签
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/archives" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-archive"></i>
+			
+			归档
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/about" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-user-circle"></i>
+			
+			关于
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/friends" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-address-book"></i>
+			
+			友链
+		</a>
+          
+        </li>
+        
+        
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="https://github.com/lcn29" class="waves-effect waves-light" target="_blank">
+                <i class="fab fa-github-square fa-fw"></i>Fork Me
+            </a>
+        </li>
+        
+    </ul>
+</div>
+
+
+        </div>
+
+        
+            <style>
+    .nav-transparent .github-corner {
+        display: none !important;
+    }
+
+    .github-corner {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        right: 0;
+        border: 0;
+        transform: scale(1.1);
+    }
+
+    .github-corner svg {
+        color: #121317;
+        fill: #fff;
+        height: 64px;
+        width: 64px;
+    }
+
+    .github-corner:hover .octo-arm {
+        animation: a 0.56s ease-in-out;
+    }
+
+    .github-corner .octo-arm {
+        animation: none;
+    }
+
+    @keyframes a {
+        0%,
+        to {
+            transform: rotate(0);
+        }
+        20%,
+        60% {
+            transform: rotate(-25deg);
+        }
+        40%,
+        80% {
+            transform: rotate(10deg);
+        }
+    }
+</style>
+
+<a href="https://github.com/lcn29" class="github-corner tooltipped hide-on-med-and-down" target="_blank"
+   data-tooltip="Fork Me" data-position="left" data-delay="50">
+    <svg viewBox="0 0 250 250" aria-hidden="true">
+        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+        <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
+              fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+        <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
+              fill="currentColor" class="octo-body"></path>
+    </svg>
+</a>
+        
+    </nav>
+
+</header>
+
+    
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/15.jpg')">
+    <div class="container" style="right: 0px;left: 0px;">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <h1 class="description center-align post-title">记一次 SQL 优化</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<main class="post-container content">
+
+    
+    <div class="row">
+    <div id="main-content" class="col s12 m12 l9">
+        <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/MySQL/">
+                                <span class="chip bg-color">MySQL</span>
+                            </a>
+                        
+                            <a href="/tags/%E7%94%9F%E4%BA%A7%E8%AE%B0%E5%BD%95/">
+                                <span class="chip bg-color">生产记录</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2024-06-26
+                </div>
+                
+
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-check fa-fw"></i>更新日期:&nbsp;&nbsp;
+                    2024-10-10
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
+                    2.4k
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                    10 分
+                </div>
+                
+
+                
+                    <div id="busuanzi_container_page_pv" class="info-break-policy">
+                        <i class="far fa-eye fa-fw"></i>阅读次数:&nbsp;&nbsp;
+                        <span id="busuanzi_value_page_pv"></span>
+                    </div>
+				
+            </div>
+        </div>
+        <hr class="clearfix">
+
+        
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.min.css">
+        
+
+        
+
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <h2 id="1-背景"><a href="#1-背景" class="headerlink" title="1 背景"></a>1 背景</h2><p>我们的数据库中配置了一套慢 SQL 的监控(这里存在 SQL 本身不慢, 但是触发某些场景, 比如 filesort 等也会被采集), 会不定时的输出一批需要排查的 SQL, 下面挑了几条比较有意思的进行分享。</p>
+<h2 id="2-table-1"><a href="#2-table-1" class="headerlink" title="2 table_1"></a>2 table_1</h2><p>表结构:</p>
+<pre class="language-sql" data-language="sql"><code class="language-sql">CEATE <span class="token keyword">TABLE</span> <span class="token identifier"><span class="token punctuation">`</span>table_1<span class="token punctuation">`</span></span> <span class="token punctuation">(</span>
+    
+    column_1<span class="token punctuation">,</span>
+    column_2<span class="token punctuation">,</span>
+    column_3<span class="token punctuation">,</span>
+    column_4<span class="token punctuation">,</span>
+    time_column_5
+
+    <span class="token keyword">KEY</span> <span class="token identifier"><span class="token punctuation">`</span>idx_001<span class="token punctuation">`</span></span><span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>column_3<span class="token punctuation">`</span></span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token keyword">KEY</span> <span class="token identifier"><span class="token punctuation">`</span>idx_002<span class="token punctuation">`</span></span><span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>column_2<span class="token punctuation">`</span></span><span class="token punctuation">,</span> <span class="token identifier"><span class="token punctuation">`</span>column_3<span class="token punctuation">`</span></span><span class="token punctuation">,</span> <span class="token identifier"><span class="token punctuation">`</span>time_column_5<span class="token punctuation">`</span></span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span></code></pre>
+
+<p>SQL:</p>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">select</span> column_1 <span class="token keyword">from</span> table_1 <span class="token keyword">where</span> column_2 <span class="token operator">and</span> column_3 <span class="token operator">and</span> time_column_5 <span class="token operator">></span> ? <span class="token keyword">order</span> <span class="token keyword">by</span> time_column_5 <span class="token keyword">desc</span></code></pre>
+
+<p>执行计划: </p>
+<table>
+<thead>
+<tr>
+<th align="center">select_type</th>
+<th align="center">table</th>
+<th align="center">partitions</th>
+<th align="center">type</th>
+<th align="center">possible_keys</th>
+<th align="center">key</th>
+<th align="center">key_len</th>
+<th align="center">ref</th>
+<th align="center">rows</th>
+<th align="center">filtered</th>
+<th align="center">Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">SIMPLE</td>
+<td align="center">table_1</td>
+<td align="center"></td>
+<td align="center">range</td>
+<td align="center">idx_001,idx_002</td>
+<td align="center">idx_002</td>
+<td align="center">133</td>
+<td align="center"></td>
+<td align="center">1</td>
+<td align="center">5</td>
+<td align="center">Using index condition</td>
+</tr>
+</tbody></table>
+<p>通过分析执行过程, 可以发现这条 SQL 本身已经是 range 同时基本走到符合条件的索引 <strong>idx_002</strong> 了。<br>因为这条 SQL 只需要在查询出一个 column_1 字段, 如果还想再进一步优化的话, 可以直接将这个字段添加到 <strong>idx_002</strong> 的索引, 直接让这条 SQL 在索引树中处理, 不回表查询。</p>
+<p>修改 idx_002 的索引如下 <strong>column_2, column_3, column_1, time_column_4</strong></p>
+<table>
+<thead>
+<tr>
+<th align="center">select_type</th>
+<th align="center">table</th>
+<th align="center">partitions</th>
+<th align="center">type</th>
+<th align="center">possible_keys</th>
+<th align="center">key</th>
+<th align="center">key_len</th>
+<th align="center">ref</th>
+<th align="center">rows</th>
+<th align="center">filtered</th>
+<th align="center">Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">SIMPLE</td>
+<td align="center">table_1</td>
+<td align="center"></td>
+<td align="center">range</td>
+<td align="center">idx_001, idx_002</td>
+<td align="center">idx_002</td>
+<td align="center">133</td>
+<td align="center"></td>
+<td align="center">1</td>
+<td align="center">5</td>
+<td align="center">Using where, Backward index scan, Using index</td>
+</tr>
+</tbody></table>
+<p>可以发现 Extra 中, 整条 SQL 为 <strong>Using index</strong>, 只使用到了索引树, 同时利用到了 MySQL8 的新特性 backward index scan (MySQL 8 对字段倒序排序做的一种优化, 同样是直接在索引树上操作, 不回表处理)。</p>
+<h2 id="3-table-2"><a href="#3-table-2" class="headerlink" title="3 table_2"></a>3 table_2</h2><p>表结构:</p>
+<pre class="language-sql" data-language="sql"><code class="language-sql">CEATE <span class="token keyword">TABLE</span> <span class="token identifier"><span class="token punctuation">`</span>table_2<span class="token punctuation">`</span></span> <span class="token punctuation">(</span>
+    
+    column_1<span class="token punctuation">,</span>
+    column_2<span class="token punctuation">,</span>
+    column_3<span class="token punctuation">,</span>
+    column_4<span class="token punctuation">,</span>
+    time_column_5
+
+    <span class="token keyword">KEY</span> <span class="token identifier"><span class="token punctuation">`</span>idx_001<span class="token punctuation">`</span></span><span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>column_3<span class="token punctuation">`</span></span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token keyword">KEY</span> <span class="token identifier"><span class="token punctuation">`</span>idx_002<span class="token punctuation">`</span></span><span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>column_2<span class="token punctuation">`</span></span><span class="token punctuation">,</span> <span class="token identifier"><span class="token punctuation">`</span>column_3<span class="token punctuation">`</span></span><span class="token punctuation">,</span> <span class="token identifier"><span class="token punctuation">`</span>time_column_5<span class="token punctuation">`</span></span><span class="token punctuation">)</span>
+    <span class="token keyword">KEY</span> <span class="token identifier"><span class="token punctuation">`</span>idx_003<span class="token punctuation">`</span></span><span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>column_4<span class="token punctuation">`</span></span><span class="token punctuation">,</span> <span class="token identifier"><span class="token punctuation">`</span>time_column_5<span class="token punctuation">`</span></span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span></code></pre>
+
+<p>SQL:</p>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">select</span> column_1 <span class="token keyword">from</span> table_2 <span class="token keyword">where</span> <span class="token punctuation">(</span>column_2 <span class="token operator">in</span> <span class="token punctuation">(</span>?<span class="token operator">+</span><span class="token punctuation">)</span> <span class="token operator">or</span> column_4 <span class="token operator">in</span> <span class="token punctuation">(</span>?<span class="token operator">+</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">and</span> time_column_5 <span class="token operator">></span> ? <span class="token operator">and</span> time_column_5 <span class="token operator">&lt;=</span> ?</code></pre>
+
+<p>执行计划: </p>
+<table>
+<thead>
+<tr>
+<th align="center">select_type</th>
+<th align="center">table</th>
+<th align="center">partitions</th>
+<th align="center">type</th>
+<th align="center">possible_keys</th>
+<th align="center">key</th>
+<th align="center">key_len</th>
+<th align="center">ref</th>
+<th align="center">rows</th>
+<th align="center">filtered</th>
+<th align="center">Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">SIMPLE</td>
+<td align="center">table_2</td>
+<td align="center"></td>
+<td align="center">index_merge</td>
+<td align="center">idx_001, idx_002, idx_003</td>
+<td align="center">idx_002</td>
+<td align="center">128128</td>
+<td align="center"></td>
+<td align="center">17907</td>
+<td align="center">0.11</td>
+<td align="center">Using sort_union(idx_002, idx_003); Using where</td>
+</tr>
+</tbody></table>
+<p><strong>index_merge</strong>: 分别通过对两个独立的 index 进行过滤之后，将过滤之后的结果聚合在一起，然后在返回结果集<br><strong>sort_union</strong>: 简单理解: 使用到了 or, 回表捞到需要的数据，合并后再排序</p>
+<p>column_2 和 column_4 都有各种适合的索引, 尝试通过 union all 将 or 替换掉</p>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">select</span> column_1 <span class="token keyword">from</span> table_2 <span class="token keyword">where</span> column_2 <span class="token operator">in</span> <span class="token punctuation">(</span>?<span class="token operator">+</span><span class="token punctuation">)</span> <span class="token operator">and</span> time_column_5 <span class="token operator">></span> ? <span class="token operator">and</span> time_column_5 <span class="token operator">&lt;=</span> ?
+<span class="token keyword">union</span> <span class="token keyword">all</span>
+<span class="token keyword">select</span> column_1 <span class="token keyword">from</span> table_2 <span class="token keyword">where</span> column_4 <span class="token operator">in</span> <span class="token punctuation">(</span>?<span class="token operator">+</span><span class="token punctuation">)</span> <span class="token operator">and</span> time_column_5 <span class="token operator">></span> ? <span class="token operator">and</span> time_column_5 <span class="token operator">&lt;=</span> ?</code></pre>
+
+
+<table>
+<thead>
+<tr>
+<th align="center">select_type</th>
+<th align="center">table</th>
+<th align="center">partitions</th>
+<th align="center">type</th>
+<th align="center">possible_keys</th>
+<th align="center">key</th>
+<th align="center">key_len</th>
+<th align="center">ref</th>
+<th align="center">rows</th>
+<th align="center">filtered</th>
+<th align="center">Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">SIMPLE</td>
+<td align="center">table_2</td>
+<td align="center"></td>
+<td align="center">range</td>
+<td align="center">idx_002</td>
+<td align="center">idx_002</td>
+<td align="center">133</td>
+<td align="center"></td>
+<td align="center">6323</td>
+<td align="center">1</td>
+<td align="center">Using index condition; Using where</td>
+</tr>
+<tr>
+<td align="center">SIMPLE</td>
+<td align="center">table_2</td>
+<td align="center"></td>
+<td align="center">range</td>
+<td align="center">idx_003</td>
+<td align="center">idx_00</td>
+<td align="center">133</td>
+<td align="center"></td>
+<td align="center">5</td>
+<td align="center">1</td>
+<td align="center">Using index condition; Using where</td>
+</tr>
+</tbody></table>
+<p>观察 rows 预测扫描的行数少了, 同时 Extra 中切换到了 使用索引 + 回表查询</p>
+<h2 id="4-table-3"><a href="#4-table-3" class="headerlink" title="4 table_3"></a>4 table_3</h2><p>表结构: </p>
+<pre class="language-sql" data-language="sql"><code class="language-sql">CEATE <span class="token keyword">TABLE</span> <span class="token identifier"><span class="token punctuation">`</span>table_2<span class="token punctuation">`</span></span> <span class="token punctuation">(</span>
+    
+    column_1<span class="token punctuation">,</span>
+    column_2<span class="token punctuation">,</span>
+    char_column_3<span class="token punctuation">,</span>
+    time_column_4
+
+    <span class="token keyword">KEY</span> <span class="token identifier"><span class="token punctuation">`</span>idx_001<span class="token punctuation">`</span></span><span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>char_column_3<span class="token punctuation">`</span></span><span class="token punctuation">,</span> <span class="token identifier"><span class="token punctuation">`</span>time_column_4<span class="token punctuation">`</span></span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span></code></pre>
+
+<p>SQL:</p>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">select</span> column_1<span class="token punctuation">,</span> char_column_3<span class="token punctuation">,</span> time_column_4 <span class="token keyword">from</span> table_3 <span class="token keyword">where</span> char_column_3 <span class="token operator">in</span> <span class="token punctuation">(</span>?<span class="token operator">+</span><span class="token punctuation">)</span> <span class="token keyword">order</span> <span class="token keyword">by</span> time_column_4 <span class="token keyword">desc</span> lmit ?<span class="token punctuation">,</span> ?</code></pre>
+
+<p>执行计划: </p>
+<table>
+<thead>
+<tr>
+<th align="center">select_type</th>
+<th align="center">table</th>
+<th align="center">partitions</th>
+<th align="center">type</th>
+<th align="center">possible_keys</th>
+<th align="center">key</th>
+<th align="center">key_len</th>
+<th align="center">ref</th>
+<th align="center">rows</th>
+<th align="center">filtered</th>
+<th align="center">Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">SIMPLE</td>
+<td align="center">table_3</td>
+<td align="center"></td>
+<td align="center">range</td>
+<td align="center">idx_001</td>
+<td align="center">idx_001</td>
+<td align="center">128</td>
+<td align="center"></td>
+<td align="center">4</td>
+<td align="center">5</td>
+<td align="center">Using index condition; Using where; Using filesort</td>
+</tr>
+</tbody></table>
+<p>这条 SQL 主要是因为使用到了 filesort。<br>通过索引 idx_001 可以看出 查询的条件 char_column_3 和 time_column_4 都是在索引里面的, 理而导致 Using filesort 的原因是因为 char_column_3 的条件是 in</p>
+<p>尝试将 char_column_3 的条件修改为 &#x3D;, 执行计划如下</p>
+<table>
+<thead>
+<tr>
+<th align="center">select_type</th>
+<th align="center">table</th>
+<th align="center">partitions</th>
+<th align="center">type</th>
+<th align="center">possible_keys</th>
+<th align="center">key</th>
+<th align="center">key_len</th>
+<th align="center">ref</th>
+<th align="center">rows</th>
+<th align="center">filtered</th>
+<th align="center">Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">SIMPLE</td>
+<td align="center">table_3</td>
+<td align="center"></td>
+<td align="center">ref</td>
+<td align="center">idx_001</td>
+<td align="center">idx_001</td>
+<td align="center">128</td>
+<td align="center">const</td>
+<td align="center">4</td>
+<td align="center">5</td>
+<td align="center">Using index condition; Using where</td>
+</tr>
+</tbody></table>
+<p>in 导致索引中的 time_column_4 失效原因:<br>索引是有序的, 通过索引找到的数据, 理论上也是有序的。<br>比如表中当前有数据 (1, 1), (2, 2), (3, 3), (1,5) (1,3)。<br>通过 char_column_3 in 查询出来的数据为 (1, 1), (1,3), (1,5), (2, 2), (3, 3), 可以发现是按照 char_column_3 排序好了。<br>但是现在我们需要的是按照 time_column_4 进行排序, 那么就在用 char_column_3 查询出来的数据后再进行多一次排序, 就导致了 filesort 的出现。  </p>
+<p>尝试去掉 filesort, 建立 idx_02(time_column_4, char_column_3) 的组合索引, 同时强制走这个索引 (通过尝试, 发现 MySQL 的优化器分析走旧索引比较好)</p>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">select</span> column_1<span class="token punctuation">,</span> char_column_3<span class="token punctuation">,</span> time_column_4 <span class="token keyword">from</span> table_3 <span class="token keyword">force</span> <span class="token keyword">index</span><span class="token punctuation">(</span>idx_02<span class="token punctuation">)</span> <span class="token keyword">where</span> char_column_3 <span class="token operator">in</span> <span class="token punctuation">(</span>?<span class="token operator">+</span><span class="token punctuation">)</span> <span class="token keyword">order</span> <span class="token keyword">by</span> time_column_4 <span class="token keyword">desc</span> lmit ?<span class="token punctuation">,</span> ?</code></pre>
+
+<table>
+<thead>
+<tr>
+<th align="center">select_type</th>
+<th align="center">table</th>
+<th align="center">partitions</th>
+<th align="center">type</th>
+<th align="center">possible_keys</th>
+<th align="center">key</th>
+<th align="center">key_len</th>
+<th align="center">ref</th>
+<th align="center">rows</th>
+<th align="center">filtered</th>
+<th align="center">Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">SIMPLE</td>
+<td align="center">table_3</td>
+<td align="center"></td>
+<td align="center">ref</td>
+<td align="center">idx_001</td>
+<td align="center">idx_001</td>
+<td align="center">128</td>
+<td align="center">const</td>
+<td align="center">15</td>
+<td align="center">0.33</td>
+<td align="center">Using where</td>
+</tr>
+</tbody></table>
+<p>可以发现 filesort 去掉了, 但是对应的 rows 查询条数上涨了。<br>结论: 当前 SQL 暂时这样, 不修改。</p>
+<h2 id="5-table-4"><a href="#5-table-4" class="headerlink" title="5 table_4"></a>5 table_4</h2><p>表结构: </p>
+<pre class="language-sql" data-language="sql"><code class="language-sql">CEATE <span class="token keyword">TABLE</span> <span class="token identifier"><span class="token punctuation">`</span>table_4<span class="token punctuation">`</span></span> <span class="token punctuation">(</span>
+    
+    column_1<span class="token punctuation">,</span>
+    column_2<span class="token punctuation">,</span>
+    column_3
+<span class="token punctuation">)</span></code></pre>
+
+<p>SQL: </p>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> table_4 <span class="token keyword">where</span> column_2 <span class="token operator">=</span> ? <span class="token operator">and</span> column_3 <span class="token operator">=</span> ?</code></pre>
+
+<p>执行计划: </p>
+<table>
+<thead>
+<tr>
+<th align="center">select_type</th>
+<th align="center">table</th>
+<th align="center">partitions</th>
+<th align="center">type</th>
+<th align="center">possible_keys</th>
+<th align="center">key</th>
+<th align="center">key_len</th>
+<th align="center">ref</th>
+<th align="center">rows</th>
+<th align="center">filtered</th>
+<th align="center">Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">SIMPLE</td>
+<td align="center">table_4</td>
+<td align="center"></td>
+<td align="center">ALL</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">128</td>
+<td align="center">const</td>
+<td align="center">1026</td>
+<td align="center">0.2</td>
+<td align="center">Using where</td>
+</tr>
+</tbody></table>
+<p>走到了 ALL, 整张表数据量也在 900+ 左右, 可能初期设想时不会有那么多数据, 所以没加索引。<br>现在走动了 ALL, 第一时间想到的是给查询的 2 个字段加上索引, 那么直接加上吗？</p>
+<p>先分析一下 column_2 和 column_3 各自的分布。</p>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">select</span> <span class="token function">count</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> column_2 <span class="token keyword">from</span> table_4 <span class="token keyword">group</span> <span class="token keyword">by</span> column_2</code></pre>
+
+<table>
+<thead>
+<tr>
+<th align="center">count(1)</th>
+<th align="center">column_2</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">10</td>
+<td align="center">2</td>
+</tr>
+<tr>
+<td align="center">901</td>
+<td align="center">3</td>
+</tr>
+<tr>
+<td align="center">7</td>
+<td align="center">4</td>
+</tr>
+<tr>
+<td align="center">1</td>
+<td align="center">5</td>
+</tr>
+<tr>
+<td align="center">12</td>
+<td align="center">6</td>
+</tr>
+<tr>
+<td align="center">1</td>
+<td align="center">7</td>
+</tr>
+<tr>
+<td align="center">1</td>
+<td align="center">8</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="center">9</td>
+</tr>
+</tbody></table>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">select</span> <span class="token function">count</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> column_3 <span class="token keyword">from</span> table_4 <span class="token keyword">group</span> <span class="token keyword">by</span> column_3</code></pre>
+
+<table>
+<thead>
+<tr>
+<th align="center">count(1)</th>
+<th align="center">column_3</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">9</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center">64</td>
+<td align="center">2</td>
+</tr>
+<tr>
+<td align="center">861</td>
+<td align="center">3</td>
+</tr>
+</tbody></table>
+<p>可以发现 column_2 和 column_3 应该都是枚举值 (一开始可能考虑到都是枚举所以没加索引吧)。<br>回到代码中查看 SQL 的调用链, 发现调用的地方就 2 个, 查询的条件 column_2 主要在 (6,7,8), 而 column_3 则是 2。</p>
+<p>虽然平常我们都知道枚举类型的字段不要加索引，因为区分度不高。<br>但是在某些情况下，还是建议建立索引的。举个例子: 有一张大表, 发送给客户的短信信息和状态, 表中有个字段存储的是当前这条短信是否发送给客户了，0: 未发送, 1: 已发送。<br>短信发送成功后, 会将状态修改为 1: 已发送。 基于这种情况, 这张大表中的未发送的数据量和远远小于已发送的数据量, 同时平时查询的时候也都几乎是查询未发送的, 这时候就可以给这个枚举值字段加上索引, 因为通过未发送这种情况可以筛选掉很多的数据量。</p>
+<p>所以给 column_2 和 column_3 建立一个组合索引, 同时因为 column_2 的区分度更高, 所以将 column_2 放在 column_1 的前面。</p>
+<h2 id="6-table-5"><a href="#6-table-5" class="headerlink" title="6 table_5"></a>6 table_5</h2><p>表结构: </p>
+<pre class="language-sql" data-language="sql"><code class="language-sql">CEATE <span class="token keyword">TABLE</span> <span class="token identifier"><span class="token punctuation">`</span>table_5<span class="token punctuation">`</span></span> <span class="token punctuation">(</span>
+    
+    column_1<span class="token punctuation">,</span>
+    column_2<span class="token punctuation">,</span>
+    column_3
+
+    <span class="token keyword">KEY</span> idx_001<span class="token punctuation">(</span>column_1<span class="token punctuation">)</span>
+<span class="token punctuation">)</span></code></pre>
+
+<p>SQL: </p>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> table_5 <span class="token keyword">where</span> column_1 <span class="token operator">=</span> ? <span class="token operator">and</span> column_2 <span class="token operator">=</span> ? <span class="token keyword">order</span> <span class="token keyword">by</span> <span class="token keyword">convert</span><span class="token punctuation">(</span>column_1 <span class="token keyword">using</span> gbk<span class="token punctuation">)</span></code></pre>
+
+<p>执行计划: </p>
+<table>
+<thead>
+<tr>
+<th align="center">select_type</th>
+<th align="center">table</th>
+<th align="center">partitions</th>
+<th align="center">type</th>
+<th align="center">possible_keys</th>
+<th align="center">key</th>
+<th align="center">key_len</th>
+<th align="center">ref</th>
+<th align="center">rows</th>
+<th align="center">filtered</th>
+<th align="center">Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">SIMPLE</td>
+<td align="center">table_5</td>
+<td align="center"></td>
+<td align="center">ref</td>
+<td align="center">idx_001</td>
+<td align="center">idx_001</td>
+<td align="center">152</td>
+<td align="center">const</td>
+<td align="center">1</td>
+<td align="center">5</td>
+<td align="center">Using index condition; Using where; Using filesort</td>
+</tr>
+</tbody></table>
+<p>同时是因为 filesort, 这里可以将排序的字段 column_1 加入到 idx 索引中。<br>但是因为 column_1 使用到了索引, 最终只会导致加的这个字段不起作用, 那么</p>
+<ol>
+<li>去掉这个函数, 排序而已, 对数据的准确性没有影响, 但是排序的的顺序和生产的不一致</li>
+<li>将这个排序移到代码中进行</li>
+</ol>
+<h2 id="7-table-6"><a href="#7-table-6" class="headerlink" title="7 table_6"></a>7 table_6</h2><pre class="language-sql" data-language="sql"><code class="language-sql">CEATE <span class="token keyword">TABLE</span> <span class="token identifier"><span class="token punctuation">`</span>table_6<span class="token punctuation">`</span></span> <span class="token punctuation">(</span>
+    
+    column_1<span class="token punctuation">,</span>
+    column_2<span class="token punctuation">,</span>
+    column_3<span class="token punctuation">,</span>
+    is_deleted
+
+    <span class="token keyword">KEY</span> idx_001<span class="token punctuation">(</span>column_1<span class="token punctuation">,</span> is_deleted<span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token keyword">KEY</span> idx_002<span class="token punctuation">(</span>column_2<span class="token punctuation">,</span> is_deleted<span class="token punctuation">)</span>
+<span class="token punctuation">)</span></code></pre>
+
+<p>当前表数据量 80155064, 使用了逻辑删除, 未删除:已删除 &#x3D; 5:3 左右 </p>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">select</span> column_1<span class="token punctuation">,</span> column_2<span class="token punctuation">,</span> column_3 <span class="token keyword">from</span> table_6 <span class="token keyword">where</span> column_1 <span class="token operator">in</span> <span class="token punctuation">(</span>?<span class="token operator">+</span><span class="token punctuation">)</span> <span class="token operator">and</span> is_deleted <span class="token operator">=</span> <span class="token number">0</span></code></pre>
+
+<table>
+<thead>
+<tr>
+<th align="center">select_type</th>
+<th align="center">table</th>
+<th align="center">partitions</th>
+<th align="center">type</th>
+<th align="center">possible_keys</th>
+<th align="center">key</th>
+<th align="center">key_len</th>
+<th align="center">ref</th>
+<th align="center">rows</th>
+<th align="center">filtered</th>
+<th align="center">Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">SIMPLE</td>
+<td align="center">table_6</td>
+<td align="center"></td>
+<td align="center">range</td>
+<td align="center">idx_001</td>
+<td align="center">idx_001</td>
+<td align="center">303</td>
+<td align="center"></td>
+<td align="center">2</td>
+<td align="center">10</td>
+<td align="center">Using index condition; Using where</td>
+</tr>
+</tbody></table>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">select</span> column_1<span class="token punctuation">,</span> column_2<span class="token punctuation">,</span> column_3 <span class="token keyword">from</span> table_6 <span class="token keyword">where</span> column_2 <span class="token operator">in</span> <span class="token punctuation">(</span>?<span class="token operator">+</span><span class="token punctuation">)</span> <span class="token operator">and</span> is_deleted <span class="token operator">=</span> <span class="token number">0</span></code></pre>
+
+<table>
+<thead>
+<tr>
+<th align="center">select_type</th>
+<th align="center">table</th>
+<th align="center">partitions</th>
+<th align="center">type</th>
+<th align="center">possible_keys</th>
+<th align="center">key</th>
+<th align="center">key_len</th>
+<th align="center">ref</th>
+<th align="center">rows</th>
+<th align="center">filtered</th>
+<th align="center">Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">SIMPLE</td>
+<td align="center">table_6</td>
+<td align="center"></td>
+<td align="center">range</td>
+<td align="center">idx_002</td>
+<td align="center">idx_002</td>
+<td align="center">153</td>
+<td align="center"></td>
+<td align="center">2</td>
+<td align="center">10</td>
+<td align="center">Using index condition; Using where</td>
+</tr>
+</tbody></table>
+<p>2 条 SQL 的执行时间都是秒级别, 但是通过分析可以发现走的索引都很准确了, 通过调整索引的方式不太合适了。<br>那么有别的方式优化吗? 逻辑删除 –&gt; 已经删除的数据还有保存的意义吗? –&gt; 清除(或迁移到另一张表), 减轻表的数据量, 也能达到优化的效果。</p>
+<h3 id="7-1-本地尝试清除数据"><a href="#7-1-本地尝试清除数据" class="headerlink" title="7.1 本地尝试清除数据"></a>7.1 本地尝试清除数据</h3><h4 id="7-1-1-初始数据"><a href="#7-1-1-初始数据" class="headerlink" title="7.1.1 初始数据"></a>7.1.1 初始数据</h4><table>
+<thead>
+<tr>
+<th align="center">总数据量</th>
+<th align="center">未删除</th>
+<th align="center">已删除</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">10000001</td>
+<td align="center">5002602</td>
+<td align="center">4997399</td>
+</tr>
+</tbody></table>
+<p>表内存情况</p>
+<table>
+<thead>
+<tr>
+<th align="center">Name</th>
+<th align="center">Engine</th>
+<th align="center">Version</th>
+<th align="center">Row_formant</th>
+<th align="center">Rows</th>
+<th align="center">Avg_row_length</th>
+<th align="center">Data_length</th>
+<th align="center">Max_data_length</th>
+<th align="center">Data_free</th>
+<th align="center">Auto_increment</th>
+<th align="center">Create_time</th>
+<th align="center">Update_time</th>
+<th align="center">Check_time</th>
+<th align="center">Collation</th>
+<th align="center">Checksum</th>
+<th align="center">Create_options</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">table_6</td>
+<td align="center">InnoDb</td>
+<td align="center">10</td>
+<td align="center">Dynamic</td>
+<td align="center">9657234</td>
+<td align="center">160</td>
+<td align="center">1547698176 (1476.00M)</td>
+<td align="center"></td>
+<td align="center">3801726976 (3625.60M)</td>
+<td align="center">4194304</td>
+<td align="center">10000003</td>
+<td align="center">2024-06-20 14:50:34</td>
+<td align="center">2024-06-20 16:27:10</td>
+<td align="center">NULL</td>
+<td align="center">utf8_general_ci</td>
+<td align="center">NULL</td>
+</tr>
+</tbody></table>
+<p>备注:<br>date_length: 数据的大小<br>index_length: 索引的大小<br>data_free: 碎片空间的大小  </p>
+<h4 id="7-1-2-继续往表追加数据"><a href="#7-1-2-继续往表追加数据" class="headerlink" title="7.1.2 继续往表追加数据"></a>7.1.2 继续往表追加数据</h4><p>向表中追加 1529500 条数据</p>
+<table>
+<thead>
+<tr>
+<th align="center">总数据量</th>
+<th align="center">未删除</th>
+<th align="center">已删除</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">11529501</td>
+<td align="center">5766861</td>
+<td align="center">5762640</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th align="center">Name</th>
+<th align="center">Engine</th>
+<th align="center">Version</th>
+<th align="center">Row_formant</th>
+<th align="center">Rows</th>
+<th align="center">Avg_row_length</th>
+<th align="center">Data_length</th>
+<th align="center">Max_data_length</th>
+<th align="center">Data_free</th>
+<th align="center">Auto_increment</th>
+<th align="center">Create_time</th>
+<th align="center">Update_time</th>
+<th align="center">Check_time</th>
+<th align="center">Collation</th>
+<th align="center">Checksum</th>
+<th align="center">Create_options</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">table_6</td>
+<td align="center">InnoDb</td>
+<td align="center">10</td>
+<td align="center">Dynamic</td>
+<td align="center">11422530</td>
+<td align="center">156</td>
+<td align="center">1785724928 (1703.00M)</td>
+<td align="center">0</td>
+<td align="center">4484366336 (4276.62M)</td>
+<td align="center">5242880</td>
+<td align="center">11529503</td>
+<td align="center">2024-06-20 14:50:34</td>
+<td align="center">2024-06-20 16:53:30</td>
+<td align="center">NULL</td>
+<td align="center">utf8_general_ci</td>
+<td align="center">NULL</td>
+</tr>
+</tbody></table>
+<h4 id="7-1-3-尝试清除表中一半逻辑删除的数据"><a href="#7-1-3-尝试清除表中一半逻辑删除的数据" class="headerlink" title="7.1.3 尝试清除表中一半逻辑删除的数据"></a>7.1.3 尝试清除表中一半逻辑删除的数据</h4><pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">DELETE</span> <span class="token keyword">from</span> table_6 <span class="token keyword">where</span> id <span class="token operator">&lt;=</span> <span class="token string">'5764751'</span> <span class="token operator">and</span> is_deleted <span class="token operator">=</span> <span class="token number">1</span></code></pre>
+
+<table>
+<thead>
+<tr>
+<th align="center">总数据量</th>
+<th align="center">未删除</th>
+<th align="center">已删除</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">8648665</td>
+<td align="center">5766861</td>
+<td align="center">2881804</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th align="center">Name</th>
+<th align="center">Engine</th>
+<th align="center">Version</th>
+<th align="center">Row_formant</th>
+<th align="center">Rows</th>
+<th align="center">Avg_row_length</th>
+<th align="center">Data_length</th>
+<th align="center">Max_data_length</th>
+<th align="center">Data_free</th>
+<th align="center">Auto_increment</th>
+<th align="center">Create_time</th>
+<th align="center">Update_time</th>
+<th align="center">Check_time</th>
+<th align="center">Collation</th>
+<th align="center">Checksum</th>
+<th align="center">Create_options</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">table_6</td>
+<td align="center">InnoDb</td>
+<td align="center">10</td>
+<td align="center">Dynamic</td>
+<td align="center">8610990</td>
+<td align="center">207</td>
+<td align="center">1785724928 (1703.00M)</td>
+<td align="center">0</td>
+<td align="center">4484366336 (4276.62M)</td>
+<td align="center">42991616</td>
+<td align="center">11529503</td>
+<td align="center">2024-06-20 14:50:34</td>
+<td align="center">2024-06-20 17:14:58</td>
+<td align="center">NULL</td>
+<td align="center">utf8_general_ci</td>
+<td align="center">NULL</td>
+</tr>
+</tbody></table>
+<p>可以看到虽然删除了表中的部分数据, 但是实际占用的空间没有变化。 这时 InnoDB 内部的设计, 将删除的数据的位置标记为删除的, 后续有新的数据新增进来时, 就复用这个位置。<br>如果要强制进行空间的整理, 可以通过 <strong>alter table 表明 engine&#x3D;innodb;</strong> 的方式进行整理, 但是这个会很耗时。</p>
+<h4 id="7-1-4-清除表中所有逻辑删除的数据"><a href="#7-1-4-清除表中所有逻辑删除的数据" class="headerlink" title="7.1.4 清除表中所有逻辑删除的数据"></a>7.1.4 清除表中所有逻辑删除的数据</h4><pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">DELETE</span> <span class="token keyword">from</span> table_6 <span class="token keyword">where</span> is_deleted <span class="token operator">=</span> <span class="token number">1</span></code></pre>
+
+<table>
+<thead>
+<tr>
+<th align="center">总数据量</th>
+<th align="center">未删除</th>
+<th align="center">已删除</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">5766861</td>
+<td align="center">5766861</td>
+<td align="center">0</td>
+</tr>
+</tbody></table>
+<p>通过 alter 手动整理空间</p>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">alter</span> <span class="token keyword">table</span> table_6 <span class="token keyword">engine</span><span class="token operator">=</span><span class="token keyword">innodb</span><span class="token punctuation">;</span></code></pre>
+
+<p>表内存情况</p>
+<table>
+<thead>
+<tr>
+<th align="center">Name</th>
+<th align="center">Engine</th>
+<th align="center">Version</th>
+<th align="center">Row_formant</th>
+<th align="center">Rows</th>
+<th align="center">Avg_row_length</th>
+<th align="center">Data_length</th>
+<th align="center">Max_data_length</th>
+<th align="center">Data_free</th>
+<th align="center">Auto_increment</th>
+<th align="center">Create_time</th>
+<th align="center">Update_time</th>
+<th align="center">Check_time</th>
+<th align="center">Collation</th>
+<th align="center">Checksum</th>
+<th align="center">Create_options</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">table_6</td>
+<td align="center">InnoDb</td>
+<td align="center">10</td>
+<td align="center">Dynamic</td>
+<td align="center">5713155</td>
+<td align="center">178</td>
+<td align="center">1021296640 (973.98M)</td>
+<td align="center">0</td>
+<td align="center">1571340288 (1498.54M)</td>
+<td align="center">3145728</td>
+<td align="center">11529503</td>
+<td align="center">2024-06-20 14:50:34</td>
+<td align="center">NULL</td>
+<td align="center">NULL</td>
+<td align="center">utf8_general_ci</td>
+<td align="center">NULL</td>
+</tr>
+</tbody></table>
+<p>完整的清除数据和整理了碎片空间。</p>
+<p>注: 最终落实到生产(保留前 3 个月的数据, 将 3 个月前的数据迁移到另一张表)</p>
+
+                
+            </div>
+            <hr/>
+        </div>
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+            <div class="card">
+                <a href="/article/2024/3467330523/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/7.jpg" class="responsive-img" alt="Redis 主从复制分析 - 使用">
+                        
+                        <span class="card-title">Redis 主从复制分析 - 使用</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="far fa-clock fa-fw icon-date"></i>2024-07-05
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Redis/">
+                        <span class="chip bg-color">Redis</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/article/2024/862777855/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/21.jpg" class="responsive-img" alt="Redis 内存回收和内存淘汰机制">
+                        
+                        <span class="card-title">Redis 内存回收和内存淘汰机制</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2024-06-05
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Redis/">
+                        <span class="chip bg-color">Redis</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+
+</div>
+
+
+
+<!-- 代码块功能依赖 -->
+<script type="text/javascript" src="/libs/codeBlock/codeBlockFuction.js"></script>
+
+
+  <!-- 是否加载使用自带的 prismjs. -->
+  <script type="text/javascript" src="/libs/prism/prism.min.js"></script>
+
+
+<!-- 代码语言 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeLang.js"></script>
+
+
+<!-- 代码块复制 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeCopy.js"></script>
+
+
+<!-- 代码块收缩 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeShrink.js"></script>
+
+
+
+    </div>
+    <div id="toc-aside" class="expanded col l3 hide-on-med-and-down">
+        <div class="toc-widget card" style="background-color: white;">
+            <div class="toc-title"><i class="far fa-list-alt"></i>&nbsp;&nbsp;目录</div>
+            <div id="toc-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOC 悬浮按钮. -->
+
+<div id="floating-toc-btn" class="hide-on-med-and-down">
+    <a class="btn-floating btn-large bg-color">
+        <i class="fas fa-list-ul"></i>
+    </a>
+</div>
+
+
+<script src="/libs/tocbot/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '#articleContent',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            collapseDepth: Number('0'),
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+
+        
+        /* 修复文章卡片 div 的宽度. */
+        let fixPostCardWidth = function (srcId, targetId) {
+            let srcDiv = $('#' + srcId);
+            if (srcDiv.length === 0) {
+                return;
+            }
+
+            let w = srcDiv.width();
+            if (w >= 450) {
+                w = w + 21;
+            } else if (w >= 350 && w < 450) {
+                w = w + 18;
+            } else if (w >= 300 && w < 350) {
+                w = w + 16;
+            } else {
+                w = w + 14;
+            }
+            $('#' + targetId).width(w);
+        };
+
+        // 切换TOC目录展开收缩的相关操作.
+        const expandedClass = 'expanded';
+        let $tocAside = $('#toc-aside');
+        let $mainContent = $('#main-content');
+        $('#floating-toc-btn .btn-floating').click(function () {
+            if ($tocAside.hasClass(expandedClass)) {
+                $tocAside.removeClass(expandedClass).hide();
+                $mainContent.removeClass('l9');
+            } else {
+                $tocAside.addClass(expandedClass).show();
+                $mainContent.addClass('l9');
+            }
+            fixPostCardWidth('artDetail', 'prenext-posts');
+        });
+        
+    });
+</script>
+
+    
+
+</main>
+
+
+
+
+    <footer class="page-footer bg-color">
+    
+
+    <div class="container row center-align"
+         style="margin-bottom: 0px !important;">
+        <div class="copy-right">
+            Copyright&nbsp;&copy;
+            
+                <span id="year">2019-2024</span>
+            
+            <br/>
+
+            Powered by&nbsp;<a href="https://hexo.io/" target="_blank">Hexo</a>
+            &nbsp; | &nbsp;&nbsp;Theme <a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">Matery</a>
+
+            
+            <br>
+            
+            
+                <span id="busuanzi_container_site_pv">
+                    总访问量:&nbsp;<span id="busuanzi_value_site_pv" class="white-color"></span>
+                </span>
+            
+            
+                <span id="busuanzi_container_site_uv">
+                    &nbsp; | &nbsp;&nbsp;总访问人数:&nbsp; <span id="busuanzi_value_site_uv" class="white-color"></span>
+                </span>
+            
+            <br>
+
+            <!-- 运行天数提醒. -->
+            
+            <br>
+            
+        </div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+    <!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fas fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字"
+                   class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+$(function () {
+    var searchFunc = function (path, search_id, content_id) {
+        'use strict';
+        $.ajax({
+            url: path,
+            dataType: "xml",
+            success: function (xmlResponse) {
+                // get the contents from search data
+                var datas = $("entry", xmlResponse).map(function () {
+                    return {
+                        title: $("title", this).text(),
+                        content: $("content", this).text(),
+                        url: $("url", this).text()
+                    };
+                }).get();
+                var $input = document.getElementById(search_id);
+                var $resultContent = document.getElementById(content_id);
+                $input.addEventListener('input', function () {
+                    var str = '<ul class=\"search-result-list\">';
+                    var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                    $resultContent.innerHTML = "";
+                    if (this.value.trim().length <= 0) {
+                        return;
+                    }
+                    // perform local searching
+                    datas.forEach(function (data) {
+                        var isMatch = true;
+                        var data_title = data.title.trim().toLowerCase();
+                        var data_content = data.content.trim().replace(/<[^>]+>/g, "").toLowerCase();
+                        var data_url = data.url;
+                        data_url = data_url.indexOf('/') === 0 ? data.url : '/' + data_url;
+                        var index_title = -1;
+                        var index_content = -1;
+                        var first_occur = -1;
+                        // only match artiles with not empty titles and contents
+                        if (data_title !== '' && data_content !== '') {
+                            keywords.forEach(function (keyword, i) {
+                                index_title = data_title.indexOf(keyword);
+                                index_content = data_content.indexOf(keyword);
+                                if (index_title < 0 && index_content < 0) {
+                                    isMatch = false;
+                                } else {
+                                    if (index_content < 0) {
+                                        index_content = 0;
+                                    }
+                                    if (i === 0) {
+                                        first_occur = index_content;
+                                    }
+                                }
+                            });
+                        }
+                        // show search results
+                        if (isMatch) {
+                            str += "<li><a href='" + data_url + "' class='search-result-title'>" + data_title + "</a>";
+                            var content = data.content.trim().replace(/<[^>]+>/g, "");
+                            if (first_occur >= 0) {
+                                // cut out 100 characters
+                                var start = first_occur - 20;
+                                var end = first_occur + 80;
+                                if (start < 0) {
+                                    start = 0;
+                                }
+                                if (start === 0) {
+                                    end = 100;
+                                }
+                                if (end > content.length) {
+                                    end = content.length;
+                                }
+                                var match_content = content.substr(start, end);
+                                // highlight all keywords
+                                keywords.forEach(function (keyword) {
+                                    var regS = new RegExp(keyword, "gi");
+                                    match_content = match_content.replace(regS, "<em class=\"search-keyword\">" + keyword + "</em>");
+                                });
+
+                                str += "<p class=\"search-result\">" + match_content + "...</p>"
+                            }
+                            str += "</li>";
+                        }
+                    });
+                    str += "</ul>";
+                    $resultContent.innerHTML = str;
+                });
+            }
+        });
+    };
+
+    searchFunc('/search.xml', 'searchInput', 'searchResult');
+});
+</script>
+
+    <!-- 白天和黑夜主题 -->
+<div class="stars-con">
+    <div id="stars"></div>
+    <div id="stars2"></div>
+    <div id="stars3"></div>  
+</div>
+
+<script>
+    function switchNightMode() {
+        $('<div class="Cuteen_DarkSky"><div class="Cuteen_DarkPlanet"></div></div>').appendTo($('body')),
+        setTimeout(function () {
+            $('body').hasClass('DarkMode') 
+            ? ($('body').removeClass('DarkMode'), localStorage.setItem('isDark', '0'), $('#sum-moon-icon').removeClass("fa-sun").addClass('fa-moon')) 
+            : ($('body').addClass('DarkMode'), localStorage.setItem('isDark', '1'), $('#sum-moon-icon').addClass("fa-sun").removeClass('fa-moon')),
+            
+            setTimeout(function () {
+            $('.Cuteen_DarkSky').fadeOut(1e3, function () {
+                $(this).remove()
+            })
+            }, 2e3)
+        })
+    }
+</script>
+
+    <!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+</div>
+
+
+    <script src="/libs/materialize/materialize.min.js"></script>
+    <script src="/libs/masonry/masonry.pkgd.min.js"></script>
+    <script src="/libs/aos/aos.js"></script>
+    <script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+    <script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+    <script src="/js/matery.js"></script>
+
+    
+
+    
+    
+    
+
+    <!-- 雪花特效 -->
+    
+
+    <!-- 鼠标星星特效 -->
+    
+
+     
+        <script src="https://ssl.captcha.qq.com/TCaptcha.js"></script>
+        <script src="/libs/others/TencentCaptcha.js"></script>
+        <button id="TencentCaptcha" data-appid="xxxxxxxxxx" data-cbfn="callback" type="button" hidden></button>
+    
+
+    <!-- Baidu Analytics -->
+
+    <!-- Baidu Push -->
+
+<script>
+    (function () {
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        } else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+
+    
+    
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+    
+
+    
+
+    
+
+    <!--腾讯兔小巢-->
+    
+    
+
+    
+
+    
+
+    
+    <script src="/libs/instantpage/instantpage.js" type="module"></script>
+    
+
+</body>
+
+</html>

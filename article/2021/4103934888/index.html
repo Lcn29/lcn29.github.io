@@ -1,0 +1,1005 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="MySQL 事务, Lcn29">
+    <meta name="description" content="1 事务定义事务是数据库管理系统 (DBMS) 执行过程中的一个逻辑单位, 由一个有限的数据库操作序列构成, 这些操作要么都做, 要么都不做, 是一个不可分割的工作单位。
+事务是数据库最小的工作单元, 是不可以再分的, 可能包含了一个或者一">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+    <title>MySQL 事务 | Lcn29</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+
+
+    <!-- bg-cover style     -->
+
+
+
+<link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+<link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+<link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+<link rel="stylesheet" type="text/css" href="/css/matery.css">
+<link rel="stylesheet" type="text/css" href="/css/my.css">
+<link rel="stylesheet" type="text/css" href="/css/dark.css" media="none" onload="if(media!='all')media='all'">
+
+
+
+
+    <link rel="stylesheet" href="/libs/tocbot/tocbot.css">
+    <link rel="stylesheet" href="/css/post.css">
+
+
+
+
+    
+
+
+
+    <script src="/libs/jquery/jquery-3.6.0.min.js"></script>
+
+<meta name="generator" content="Hexo 6.3.0"><link rel="alternate" href="/atom.xml" title="Lcn29" type="application/atom+xml">
+</head>
+
+
+<body>
+    <header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.svg" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">Lcn29</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fas fa-bars"></i></a>
+<ul class="right nav-menu">
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/" class="waves-effect waves-light">
+      
+      <i class="fas fa-home" style="zoom: 0.6;"></i>
+      
+      <span>首页</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/tags" class="waves-effect waves-light">
+      
+      <i class="fas fa-tags" style="zoom: 0.6;"></i>
+      
+      <span>标签</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/archives" class="waves-effect waves-light">
+      
+      <i class="fas fa-archive" style="zoom: 0.6;"></i>
+      
+      <span>归档</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/about" class="waves-effect waves-light">
+      
+      <i class="fas fa-user-circle" style="zoom: 0.6;"></i>
+      
+      <span>关于</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/friends" class="waves-effect waves-light">
+      
+      <i class="fas fa-address-book" style="zoom: 0.6;"></i>
+      
+      <span>友链</span>
+    </a>
+    
+  </li>
+  
+  <li>
+    <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+      <i id="searchIcon" class="fas fa-search" title="搜索" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+  <li>
+    <a href="javascript:;" class="waves-effect waves-light" onclick="switchNightMode()" title="深色/浅色模式" >
+      <i id="sum-moon-icon" class="fas fa-sun" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+</ul>
+
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.svg" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">Lcn29</div>
+        <div class="logo-desc">
+            
+            Technical System
+            
+        </div>
+    </div>
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li class="m-nav-item">
+	  
+		<a href="/" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-home"></i>
+			
+			首页
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/tags" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-tags"></i>
+			
+			标签
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/archives" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-archive"></i>
+			
+			归档
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/about" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-user-circle"></i>
+			
+			关于
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/friends" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-address-book"></i>
+			
+			友链
+		</a>
+          
+        </li>
+        
+        
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="https://github.com/lcn29" class="waves-effect waves-light" target="_blank">
+                <i class="fab fa-github-square fa-fw"></i>Fork Me
+            </a>
+        </li>
+        
+    </ul>
+</div>
+
+
+        </div>
+
+        
+            <style>
+    .nav-transparent .github-corner {
+        display: none !important;
+    }
+
+    .github-corner {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        right: 0;
+        border: 0;
+        transform: scale(1.1);
+    }
+
+    .github-corner svg {
+        color: #121317;
+        fill: #fff;
+        height: 64px;
+        width: 64px;
+    }
+
+    .github-corner:hover .octo-arm {
+        animation: a 0.56s ease-in-out;
+    }
+
+    .github-corner .octo-arm {
+        animation: none;
+    }
+
+    @keyframes a {
+        0%,
+        to {
+            transform: rotate(0);
+        }
+        20%,
+        60% {
+            transform: rotate(-25deg);
+        }
+        40%,
+        80% {
+            transform: rotate(10deg);
+        }
+    }
+</style>
+
+<a href="https://github.com/lcn29" class="github-corner tooltipped hide-on-med-and-down" target="_blank"
+   data-tooltip="Fork Me" data-position="left" data-delay="50">
+    <svg viewBox="0 0 250 250" aria-hidden="true">
+        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+        <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
+              fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+        <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
+              fill="currentColor" class="octo-body"></path>
+    </svg>
+</a>
+        
+    </nav>
+
+</header>
+
+    
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/12.jpg')">
+    <div class="container" style="right: 0px;left: 0px;">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <h1 class="description center-align post-title">MySQL 事务</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<main class="post-container content">
+
+    
+    <div class="row">
+    <div id="main-content" class="col s12 m12 l9">
+        <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/MySQL/">
+                                <span class="chip bg-color">MySQL</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2021-07-26
+                </div>
+                
+
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-check fa-fw"></i>更新日期:&nbsp;&nbsp;
+                    2024-10-10
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
+                    2.7k
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                    9 分
+                </div>
+                
+
+                
+                    <div id="busuanzi_container_page_pv" class="info-break-policy">
+                        <i class="far fa-eye fa-fw"></i>阅读次数:&nbsp;&nbsp;
+                        <span id="busuanzi_value_page_pv"></span>
+                    </div>
+				
+            </div>
+        </div>
+        <hr class="clearfix">
+
+        
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.min.css">
+        
+
+        
+
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <h2 id="1-事务定义"><a href="#1-事务定义" class="headerlink" title="1 事务定义"></a>1 事务定义</h2><p>事务是数据库管理系统 (DBMS) 执行过程中的一个逻辑单位, 由一个有限的数据库操作序列构成, 这些操作要么都做, 要么都不做, 是一个不可分割的工作单位。</p>
+<p>事务是数据库最小的工作单元, 是不可以再分的, 可能包含了一个或者一系列的 DML 语句。</p>
+<h2 id="2-事务的作用"><a href="#2-事务的作用" class="headerlink" title="2 事务的作用"></a>2 事务的作用</h2><p>下面列举几个比较常见的作用: </p>
+<p><strong>1. 确保数据完整性</strong><br>事务可以确保一系列操作作为一个整体被执行，要么全部成功，要么全部失败。这对于需要多步操作的复杂业务来说非常重要，如银行转账、订单处理等。</p>
+<p><strong>2. 提供错误恢复机制</strong><br>如果在执行事务的过程中发生错误（例如，系统崩溃或其他问题），数据库可以利用事务日志回滚到事务开始前的状态，避免数据损坏或丢失。</p>
+<p><strong>3. 支持并发控制</strong><br>在多用户环境中，事务提供了一种机制，使得每个用户可以独立地工作，同时防止他们的操作相互干扰。这是通过事务的隔离级别来实现的，例如，读已提交、可重复读、串行化等。</p>
+<p><strong>4. 保持业务逻辑的一致性</strong><br>通过将相关的一系列数据库操作组合成一个事务，可以确保业务逻辑的一致性。如果不使用事务，那么在一系列操作中的某个点发生故障，可能会导致数据状态不一致。</p>
+<h2 id="3-事务的四大特性"><a href="#3-事务的四大特性" class="headerlink" title="3 事务的四大特性"></a>3 事务的四大特性</h2><p>事务的四大特性: ACID</p>
+<p><strong>Atomicity (原子性)</strong><br>对数据库的一系列的操作, 要么都是成功, 要么都是失败, 不可能出现部分成功或者部分失败的情况。</p>
+<p>以转账的场景为例, 一个账户的余额减少, 对应一个账户的增加, 这两个一定是同时成功或者同时失败的。</p>
+<p>在 InnoDB 里面是通过 undo log 来实现的, 它记录了数据修改之前的值 (逻辑日志) , 一旦发生异常, 就可以用 undo log 来实现回滚操作</p>
+<p><strong>consistent (一致性)</strong><br>数据库的完整性约束没有被破坏, 事务执行的前后都是合法的数据状态。</p>
+<p>比如说转账的这个场景, A 账户余额减少 1000, B 账户余额只增加了 500, 这个时候因为两个操作都成功了, 按照我们对原子性的定义, 它是满足原子性的, 但是它没有满足一致性, 因为它导致了会计科目的不平衡。</p>
+<p><strong>Isolation (隔离性)</strong><br>多个事务, 对表或者行的并发操作, 是透明的, 互相不干扰的, 一个未完成事务不会影响另外一个未完成事务。</p>
+<p><strong>Durable (持久性)</strong><br>一旦一个事务被提交, 它应该持久保存, 不会因为与其他操作冲突而取消这个事务。</p>
+<p>持久性是通过 redo log 和 double write 双写缓冲来实现的。<br>我们操作数据的时候, 会先写到内存的 buffer pool 里面, 同时记录 redo log, 如果在刷盘之前出现异常, 在重启后就可以读取 redo log 的内容, 写入到磁盘, 保证数据的持久性。<br>恢复成功的前提是数据页本身没有被破坏, 是完整的, 这个通过双写缓冲 (double write) 保证。</p>
+<h2 id="4-数据库什么时候会出现事务"><a href="#4-数据库什么时候会出现事务" class="headerlink" title="4 数据库什么时候会出现事务"></a>4 数据库什么时候会出现事务</h2><p><strong>1. 自动开启和自动提交</strong></p>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">update</span> 表名 <span class="token keyword">set</span> 字段 <span class="token operator">=</span> 值 <span class="token keyword">where</span> 条件<span class="token punctuation">;</span></code></pre>
+
+<p>上面的 SQL 会自动开启了一个事务, 并且自动提交了, 所以最终写入了磁盘。</p>
+<p>这种行为是通过 InnoDB 里面有一个 autocommit 的参数 (<code>show variables like &#39;autocommit&#39;;</code>) 控制的, 它的默认值是 on&#x2F;true,<br>表示在操作数据的时候, 会自动开启一个事务, 和自动提交事务。</p>
+<p><strong>2. 手动开启和手动提交</strong></p>
+<p>把 autocommit 设置成 false&#x2F;off, 那么数据库的事务就需要我们手动开启和手动结束。</p>
+<p>手动开启事务的方法</p>
+<blockquote>
+<ol>
+<li>begin</li>
+<li>start transcation</li>
+</ol>
+</blockquote>
+<p>手动提交事务&#x2F;手动撤销事务</p>
+<blockquote>
+<ol>
+<li>commit</li>
+<li>rollback</li>
+<li>客户端的连接断开的时候, 事务也会结束</li>
+</ol>
+</blockquote>
+<h2 id="5-事务并发会带来的问题"><a href="#5-事务并发会带来的问题" class="headerlink" title="5 事务并发会带来的问题"></a>5 事务并发会带来的问题</h2><h3 id="5-1-脏读"><a href="#5-1-脏读" class="headerlink" title="5.1 脏读"></a>5.1 脏读</h3><p>如图:</p>
+<p><img src="https://pic.imgdb.cn/item/65f3b46f9f345e8d0325e2ad.png" alt="Alt &#39;脏读&#39;"></p>
+<blockquote>
+<ol>
+<li>Transcation A 查询 id &#x3D; 1 的记录的 age &#x3D; 16</li>
+<li>Transcation B 更新 id &#x3D; 1 的记录的 age &#x3D; 18, 但是还未提交事务</li>
+<li>Transcation A 再次查询 id &#x3D; 1 的记录的 age &#x3D; 18</li>
+</ol>
+</blockquote>
+<p>在一个事务里面, 由于其他的事务修改了数据并且没有提交, 而导致了前后两次读取数据不一致的情况, 这种事务并发的问题叫做 <strong>脏读</strong></p>
+<h3 id="5-2-不可重复读"><a href="#5-2-不可重复读" class="headerlink" title="5.2 不可重复读"></a>5.2 不可重复读</h3><p>如图:</p>
+<p><img src="https://pic.imgdb.cn/item/65f3b4739f345e8d0325edd6.png" alt="Alt &#39;不可重复读&#39;"></p>
+<blockquote>
+<ol>
+<li>Transcation A 查询 id &#x3D; 1 的记录的 age &#x3D; 16</li>
+<li>Transcation B 更新 id &#x3D; 1 的记录的 age &#x3D; 18, 并且提交了事务</li>
+<li>Transcation A 再次查询 id &#x3D; 1 的记录的 age &#x3D; 18</li>
+</ol>
+</blockquote>
+<p>一个事务里面, 读取到了其他事务已提交的数据导致前后两次读取数据不一致的情况, 这种事务并发的问题叫做 <strong>不可重复读</strong></p>
+<h4 id="4-2-幻读"><a href="#4-2-幻读" class="headerlink" title="4.2 幻读"></a>4.2 幻读</h4><p>如图:</p>
+<p><img src="https://pic.imgdb.cn/item/65f3b4769f345e8d0325f798.png" alt="Alt &#39;幻读&#39;"></p>
+<blockquote>
+<ol>
+<li>Transcation A 查询 age &gt; 15 的记录总条数的 count &#x3D; 1</li>
+<li>Transcation B 插入了一条 age &#x3D; 18 的记录, 并且提交了事务</li>
+<li>Transcation A 再次查询 age &gt; 15 的记录总条数的 count &#x3D; 2</li>
+</ol>
+</blockquote>
+<p>一个事务里面, 由于其他事务插入或者删除数据导致前后两次读取数据数据不一致, 这种事务并发的问题叫做 <strong>幻读</strong></p>
+<p>幻读和不可重复读的区别:</p>
+<blockquote>
+<ol>
+<li>不可重复读强调的是记录的修改</li>
+<li>幻读强调的集合的增减</li>
+</ol>
+</blockquote>
+<p>事务并发带来的三大问题, 无论是脏读, 还是不可重复读, 还是幻读, 它们都是数据库的<strong>读一致性</strong>的问题, 都是在一个事务里面前后两次读取出现了不一致的情况。<br>读一致性的问题, 必须要由数据库提供一定的事务隔离机制来解决。</p>
+<h2 id="6-SQL92-标准"><a href="#6-SQL92-标准" class="headerlink" title="6 SQL92 标准"></a>6 SQL92 标准</h2><p>数据库厂商都按照这个标准, 提供一定的事务隔离级别, 来解决事务并发的问题。</p>
+<p>SQL92 里面定义了四个隔离级别</p>
+<blockquote>
+<ol>
+<li>Read Uncommitted (未提交读) :, 一个事务可以读取到其他事务未提交的数据, 会出现脏读, 它没有解决任何的问题</li>
+<li>Read Committed (已提交读) : 一个事务只能读取到其他事务已提交的数据, 不能读取到其他事务未提交的数据, 它解决了脏读的问题, 但是会出现不可重复读的问题</li>
+<li>Repeatable Read (可重复读): 在同一个事务里面多次读取同样的数据结果是一样的, 它解决了不可重复读的问题, 但是会出现幻读的问题</li>
+<li>Serializable (串行化) : 在这个隔离级别里面, 所有的事务都是串行执行的, 也就是对数据的操作需要排队, 已经不存在事务的并发操作了, 所以它解决了所有的问题</li>
+</ol>
+</blockquote>
+<p>这个是 SQL92 的标准, 但是不同的数据库厂商或者存储引擎的实现有一定的差异, 比如 Oracle 里面就只有两种 RC (已提交读) 和 Serializable (串行化) </p>
+<h3 id="6-1-MySQL-InnoDB-对隔离级别的支持"><a href="#6-1-MySQL-InnoDB-对隔离级别的支持" class="headerlink" title="6.1 MySQL InnoDB 对隔离级别的支持"></a>6.1 MySQL InnoDB 对隔离级别的支持</h3><p>在 MySQL InnoDB 里面, 不需要使用串行化的隔离级别去解决所有问题。</p>
+<table>
+<thead>
+<tr>
+<th align="center">事务隔离级别</th>
+<th align="center">脏读</th>
+<th align="center">不可重复读</th>
+<th align="center">幻读</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">未提交读 (Read Uncommitted)</td>
+<td align="center">可能</td>
+<td align="center">可能</td>
+<td align="center">可能</td>
+</tr>
+<tr>
+<td align="center">已提交读 (Read Committed)</td>
+<td align="center">不可能</td>
+<td align="center">可能</td>
+<td align="center">可能</td>
+</tr>
+<tr>
+<td align="center">可重复读 (Repeatable Read)</td>
+<td align="center">不可能</td>
+<td align="center">不可能</td>
+<td align="center">对 InnoDB 不可能</td>
+</tr>
+<tr>
+<td align="center">串行化 (Serializable)</td>
+<td align="center">不可能</td>
+<td align="center">不可能</td>
+<td align="center">不可能</td>
+</tr>
+</tbody></table>
+<p>InnoDB 支持的四个隔离级别和 SQL92 定义的基本一致, 隔离级别越高, 事务的并发度就越低。<br>唯一的区别就在于, InnoDB 在 RR 的级别就解决了幻读的问题。<br>这个也是 InnoDB 默认使用 RR 作为事务隔离级别的原因, 既保证了数据的一致性, 又支持较高的并发度。</p>
+<h2 id="7-事务隔离级别的实现"><a href="#7-事务隔离级别的实现" class="headerlink" title="7 事务隔离级别的实现"></a>7 事务隔离级别的实现</h2><p>要解决读一致性的问题, 保证一个事务中前后两次读取数据结果一致, 实现事务隔离, 应该怎么做?</p>
+<h3 id="7-1-LBCC"><a href="#7-1-LBCC" class="headerlink" title="7.1 LBCC"></a>7.1 LBCC</h3><p>要保证前后两次读取数据一致, 那么读取数据的时候, 锁定要操作的数据, 不允许其他的事务修改就行了。这种方案叫做基于锁的并发控制 Lock Based Concurrency Control (LBCC) 。<br>如果仅仅是基于锁来实现事务隔离, 一个事务读取的时候不允许其他时候修改, 那就意味着不支持并发的读写操作, 而我们的大多数应用都是读多写少的, 这样会极大地影响操作数据的效率。</p>
+<h4 id="7-2-MVCC"><a href="#7-2-MVCC" class="headerlink" title="7.2 MVCC"></a>7.2 MVCC</h4><p>要让一个事务前后两次读取的数据保持一致, 那么可以在修改数据的时候给它建立一个备份或者叫快照, 后面再来读取这个快照就行了。<br>这种方案叫做多版本的并发控制 Multi Version Concurrency Control (MVCC) 。</p>
+<p>MVCC 的核心思想是: 可以查到在这个事务开始之前已经存在的数据, 即使它在后面被修改或者删除了。在这个事务之后新增的数据, 是查不到的。</p>
+<p><strong>MVCC 的实现</strong></p>
+<p>InnoDB 为每行记录都实现了三个隐藏字段</p>
+<blockquote>
+<ol>
+<li>DB_ROW_ID: 6 个字节, 行标识</li>
+<li>DB_TRX_ID: 6 个字节, 插入或更新行的最后一个事务的事务 ID, 事务编号是自动递增的 (我们把它理解为创建版本号, 在数据新增或者修改为新数据的时候, 记录当前事务 ID)</li>
+<li>DB_ROLL_PTR: 7 个字节, 回滚指针 (我们把它理解为删除版本号, 数据被删除的时候, 记录删除的事务 ID)</li>
+</ol>
+</blockquote>
+<p>如图:<br><img src="https://pic.imgdb.cn/item/65f3b47c9f345e8d03260a43.png" alt="Alt &#39;MVVC 简单示意图&#39;"></p>
+<p>如上面的演示, 通过版本号的控制, 无论其他事务是插入 &#x2F; 修改 &#x2F; 删除, 第一个事务查询到的数据都没有变化。</p>
+<p>在 InnoDB 中, MVCC 是通过 Undo log 实现的, MVCC 和锁是协同使用的。<br>Oracle, Postgres 等等其他数据库都有 MVCC 的实现。  </p>
+<h2 id="8-支持事务的存储引擎"><a href="#8-支持事务的存储引擎" class="headerlink" title="8 支持事务的存储引擎"></a>8 支持事务的存储引擎</h2><blockquote>
+<ol>
+<li>InnoDB</li>
+<li>NDB</li>
+</ol>
+</blockquote>
+
+                
+            </div>
+            <hr/>
+        </div>
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+            <div class="card">
+                <a href="/article/2021/364637211/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/9.jpg" class="responsive-img" alt="MySQL 锁信息">
+                        
+                        <span class="card-title">MySQL 锁信息</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="far fa-clock fa-fw icon-date"></i>2021-07-26
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/MySQL/">
+                        <span class="chip bg-color">MySQL</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/article/2021/322214130/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/12.jpg" class="responsive-img" alt="MySQL InooDB 索引实现">
+                        
+                        <span class="card-title">MySQL InooDB 索引实现</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-07-22
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            Lcn29
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/MySQL/">
+                        <span class="chip bg-color">MySQL</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+
+</div>
+
+
+
+<!-- 代码块功能依赖 -->
+<script type="text/javascript" src="/libs/codeBlock/codeBlockFuction.js"></script>
+
+
+  <!-- 是否加载使用自带的 prismjs. -->
+  <script type="text/javascript" src="/libs/prism/prism.min.js"></script>
+
+
+<!-- 代码语言 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeLang.js"></script>
+
+
+<!-- 代码块复制 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeCopy.js"></script>
+
+
+<!-- 代码块收缩 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeShrink.js"></script>
+
+
+
+    </div>
+    <div id="toc-aside" class="expanded col l3 hide-on-med-and-down">
+        <div class="toc-widget card" style="background-color: white;">
+            <div class="toc-title"><i class="far fa-list-alt"></i>&nbsp;&nbsp;目录</div>
+            <div id="toc-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOC 悬浮按钮. -->
+
+<div id="floating-toc-btn" class="hide-on-med-and-down">
+    <a class="btn-floating btn-large bg-color">
+        <i class="fas fa-list-ul"></i>
+    </a>
+</div>
+
+
+<script src="/libs/tocbot/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '#articleContent',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            collapseDepth: Number('0'),
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+
+        
+        /* 修复文章卡片 div 的宽度. */
+        let fixPostCardWidth = function (srcId, targetId) {
+            let srcDiv = $('#' + srcId);
+            if (srcDiv.length === 0) {
+                return;
+            }
+
+            let w = srcDiv.width();
+            if (w >= 450) {
+                w = w + 21;
+            } else if (w >= 350 && w < 450) {
+                w = w + 18;
+            } else if (w >= 300 && w < 350) {
+                w = w + 16;
+            } else {
+                w = w + 14;
+            }
+            $('#' + targetId).width(w);
+        };
+
+        // 切换TOC目录展开收缩的相关操作.
+        const expandedClass = 'expanded';
+        let $tocAside = $('#toc-aside');
+        let $mainContent = $('#main-content');
+        $('#floating-toc-btn .btn-floating').click(function () {
+            if ($tocAside.hasClass(expandedClass)) {
+                $tocAside.removeClass(expandedClass).hide();
+                $mainContent.removeClass('l9');
+            } else {
+                $tocAside.addClass(expandedClass).show();
+                $mainContent.addClass('l9');
+            }
+            fixPostCardWidth('artDetail', 'prenext-posts');
+        });
+        
+    });
+</script>
+
+    
+
+</main>
+
+
+
+
+    <footer class="page-footer bg-color">
+    
+
+    <div class="container row center-align"
+         style="margin-bottom: 0px !important;">
+        <div class="copy-right">
+            Copyright&nbsp;&copy;
+            
+                <span id="year">2019-2024</span>
+            
+            <br/>
+
+            Powered by&nbsp;<a href="https://hexo.io/" target="_blank">Hexo</a>
+            &nbsp; | &nbsp;&nbsp;Theme <a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">Matery</a>
+
+            
+            <br>
+            
+            
+                <span id="busuanzi_container_site_pv">
+                    总访问量:&nbsp;<span id="busuanzi_value_site_pv" class="white-color"></span>
+                </span>
+            
+            
+                <span id="busuanzi_container_site_uv">
+                    &nbsp; | &nbsp;&nbsp;总访问人数:&nbsp; <span id="busuanzi_value_site_uv" class="white-color"></span>
+                </span>
+            
+            <br>
+
+            <!-- 运行天数提醒. -->
+            
+            <br>
+            
+        </div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+    <!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fas fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字"
+                   class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+$(function () {
+    var searchFunc = function (path, search_id, content_id) {
+        'use strict';
+        $.ajax({
+            url: path,
+            dataType: "xml",
+            success: function (xmlResponse) {
+                // get the contents from search data
+                var datas = $("entry", xmlResponse).map(function () {
+                    return {
+                        title: $("title", this).text(),
+                        content: $("content", this).text(),
+                        url: $("url", this).text()
+                    };
+                }).get();
+                var $input = document.getElementById(search_id);
+                var $resultContent = document.getElementById(content_id);
+                $input.addEventListener('input', function () {
+                    var str = '<ul class=\"search-result-list\">';
+                    var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                    $resultContent.innerHTML = "";
+                    if (this.value.trim().length <= 0) {
+                        return;
+                    }
+                    // perform local searching
+                    datas.forEach(function (data) {
+                        var isMatch = true;
+                        var data_title = data.title.trim().toLowerCase();
+                        var data_content = data.content.trim().replace(/<[^>]+>/g, "").toLowerCase();
+                        var data_url = data.url;
+                        data_url = data_url.indexOf('/') === 0 ? data.url : '/' + data_url;
+                        var index_title = -1;
+                        var index_content = -1;
+                        var first_occur = -1;
+                        // only match artiles with not empty titles and contents
+                        if (data_title !== '' && data_content !== '') {
+                            keywords.forEach(function (keyword, i) {
+                                index_title = data_title.indexOf(keyword);
+                                index_content = data_content.indexOf(keyword);
+                                if (index_title < 0 && index_content < 0) {
+                                    isMatch = false;
+                                } else {
+                                    if (index_content < 0) {
+                                        index_content = 0;
+                                    }
+                                    if (i === 0) {
+                                        first_occur = index_content;
+                                    }
+                                }
+                            });
+                        }
+                        // show search results
+                        if (isMatch) {
+                            str += "<li><a href='" + data_url + "' class='search-result-title'>" + data_title + "</a>";
+                            var content = data.content.trim().replace(/<[^>]+>/g, "");
+                            if (first_occur >= 0) {
+                                // cut out 100 characters
+                                var start = first_occur - 20;
+                                var end = first_occur + 80;
+                                if (start < 0) {
+                                    start = 0;
+                                }
+                                if (start === 0) {
+                                    end = 100;
+                                }
+                                if (end > content.length) {
+                                    end = content.length;
+                                }
+                                var match_content = content.substr(start, end);
+                                // highlight all keywords
+                                keywords.forEach(function (keyword) {
+                                    var regS = new RegExp(keyword, "gi");
+                                    match_content = match_content.replace(regS, "<em class=\"search-keyword\">" + keyword + "</em>");
+                                });
+
+                                str += "<p class=\"search-result\">" + match_content + "...</p>"
+                            }
+                            str += "</li>";
+                        }
+                    });
+                    str += "</ul>";
+                    $resultContent.innerHTML = str;
+                });
+            }
+        });
+    };
+
+    searchFunc('/search.xml', 'searchInput', 'searchResult');
+});
+</script>
+
+    <!-- 白天和黑夜主题 -->
+<div class="stars-con">
+    <div id="stars"></div>
+    <div id="stars2"></div>
+    <div id="stars3"></div>  
+</div>
+
+<script>
+    function switchNightMode() {
+        $('<div class="Cuteen_DarkSky"><div class="Cuteen_DarkPlanet"></div></div>').appendTo($('body')),
+        setTimeout(function () {
+            $('body').hasClass('DarkMode') 
+            ? ($('body').removeClass('DarkMode'), localStorage.setItem('isDark', '0'), $('#sum-moon-icon').removeClass("fa-sun").addClass('fa-moon')) 
+            : ($('body').addClass('DarkMode'), localStorage.setItem('isDark', '1'), $('#sum-moon-icon').addClass("fa-sun").removeClass('fa-moon')),
+            
+            setTimeout(function () {
+            $('.Cuteen_DarkSky').fadeOut(1e3, function () {
+                $(this).remove()
+            })
+            }, 2e3)
+        })
+    }
+</script>
+
+    <!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+</div>
+
+
+    <script src="/libs/materialize/materialize.min.js"></script>
+    <script src="/libs/masonry/masonry.pkgd.min.js"></script>
+    <script src="/libs/aos/aos.js"></script>
+    <script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+    <script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+    <script src="/js/matery.js"></script>
+
+    
+
+    
+    
+    
+
+    <!-- 雪花特效 -->
+    
+
+    <!-- 鼠标星星特效 -->
+    
+
+     
+        <script src="https://ssl.captcha.qq.com/TCaptcha.js"></script>
+        <script src="/libs/others/TencentCaptcha.js"></script>
+        <button id="TencentCaptcha" data-appid="xxxxxxxxxx" data-cbfn="callback" type="button" hidden></button>
+    
+
+    <!-- Baidu Analytics -->
+
+    <!-- Baidu Push -->
+
+<script>
+    (function () {
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        } else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+
+    
+    
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+    
+
+    
+
+    
+
+    <!--腾讯兔小巢-->
+    
+    
+
+    
+
+    
+
+    
+    <script src="/libs/instantpage/instantpage.js" type="module"></script>
+    
+
+</body>
+
+</html>
